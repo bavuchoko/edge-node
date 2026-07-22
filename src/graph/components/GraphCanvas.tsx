@@ -3,6 +3,11 @@ import { getHandlePosition } from '../geometry'
 import { useConnectionDrag } from '../hooks/useConnectionDrag'
 import { useViewport } from '../hooks/useViewport'
 import { getEdges, getNodes, graphReducer } from '../store'
+import {
+  resolveGraphTheme,
+  themeToCssVars,
+  type GraphTheme,
+} from '../theme'
 import type { GraphState, NodeId, Point } from '../types'
 import { ConnectionLine } from './ConnectionLine'
 import { GraphEdge } from './GraphEdge'
@@ -10,10 +15,13 @@ import { GraphNode } from './GraphNode'
 
 type GraphCanvasProps = {
   initialState: GraphState
+  theme?: GraphTheme
 }
 
-export function GraphCanvas({ initialState }: GraphCanvasProps) {
+export function GraphCanvas({ initialState, theme }: GraphCanvasProps) {
   const [state, dispatch] = useReducer(graphReducer, initialState)
+  const resolvedTheme = useMemo(() => resolveGraphTheme(theme), [theme])
+  const themeStyle = useMemo(() => themeToCssVars(resolvedTheme), [resolvedTheme])
   const nodes = useMemo(() => getNodes(state), [state])
   const edges = useMemo(() => getEdges(state), [state])
   const nodesRef = useRef(state.nodes)
@@ -172,6 +180,7 @@ export function GraphCanvas({ initialState }: GraphCanvasProps) {
     <div
       ref={containerRef}
       className={`graph-canvas${isPanning ? ' is-panning' : ''}${state.connectionDraft ? ' is-connecting' : ''}`}
+      style={themeStyle}
       onPointerDown={onCanvasPointerDown}
       onPointerMove={movePan}
       onPointerUp={endPan}
@@ -192,6 +201,7 @@ export function GraphCanvas({ initialState }: GraphCanvasProps) {
                 source={source}
                 target={target}
                 zoom={zoom}
+                hitWidthPx={resolvedTheme.edge.hitWidth}
                 selected={
                   state.selection?.type === 'edge' &&
                   state.selection.id === edge.id

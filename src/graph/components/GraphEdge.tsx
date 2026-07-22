@@ -1,15 +1,13 @@
 import { getBezierPath } from '../geometry'
 import type { Point } from '../types'
 
-/** Target hit width in screen pixels (stays constant across zoom). */
-const HIT_SCREEN_PX = 32
-
 type GraphEdgeProps = {
   id: string
   source: Point
   target: Point
   selected: boolean
   zoom: number
+  hitWidthPx?: number
   onSelect: (id: string) => void
 }
 
@@ -19,10 +17,11 @@ export function GraphEdge({
   target,
   selected,
   zoom,
+  hitWidthPx = 32,
   onSelect,
 }: GraphEdgeProps) {
   const d = getBezierPath(source, target)
-  const hitWidth = HIT_SCREEN_PX / Math.max(zoom, 0.01)
+  const hitWidth = hitWidthPx / Math.max(zoom, 0.01)
 
   return (
     <g
