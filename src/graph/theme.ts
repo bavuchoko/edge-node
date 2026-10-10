@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react'
 
+export type GraphColorMode = 'dark' | 'light'
+
 export type GraphTheme = {
   background?: string
   /** Dot grid overlay color. Set to 'transparent' to hide. */
@@ -78,7 +80,7 @@ export type ResolvedGraphTheme = {
   }
 }
 
-export const defaultGraphTheme: ResolvedGraphTheme = {
+export const darkGraphTheme: ResolvedGraphTheme = {
   background: '#141414',
   gridColor: 'rgba(255, 255, 255, 0.04)',
   gridSize: 24,
@@ -116,21 +118,72 @@ export const defaultGraphTheme: ResolvedGraphTheme = {
   },
 }
 
-export function resolveGraphTheme(partial?: GraphTheme): ResolvedGraphTheme {
+export const lightGraphTheme: ResolvedGraphTheme = {
+  background: '#f5f5f5',
+  gridColor: 'rgba(0, 0, 0, 0.08)',
+  gridSize: 24,
+  node: {
+    background: '#ffffff',
+    border: '#e5e7eb',
+    borderHover: '#d1d5db',
+    borderSelected: '#3b82f6',
+    title: '#111827',
+    subtitle: '#6b7280',
+    shadow: '0 4px 16px rgba(15, 23, 42, 0.08)',
+    radius: 6,
+    handle: '#9ca3af',
+    handleActive: '#2563eb',
+    badgeBackground: '#2563eb',
+    badgeText: '#eff6ff',
+    statusSuccess: '#16a34a',
+    statusError: '#dc2626',
+    statusIdle: '#9ca3af',
+  },
+  edge: {
+    color: '#9ca3af',
+    hoverColor: '#6b7280',
+    selectedColor: '#3b82f6',
+    width: 2,
+    hoverWidth: 2.75,
+    selectedWidth: 3,
+    hitWidth: 32,
+    draftColor: '#3b82f6',
+    draftWidth: 2,
+    draftDash: '6 4',
+  },
+  hud: {
+    color: '#6b7280',
+  },
+}
+
+/** Alias of `darkGraphTheme`, the theme used when no color mode is given. */
+export const defaultGraphTheme = darkGraphTheme
+
+export const graphThemes: Record<GraphColorMode, ResolvedGraphTheme> = {
+  dark: darkGraphTheme,
+  light: lightGraphTheme,
+}
+
+/** Fills a partial theme from the preset for `mode`. */
+export function resolveGraphTheme(
+  partial?: GraphTheme,
+  mode: GraphColorMode = 'dark',
+): ResolvedGraphTheme {
+  const base = graphThemes[mode]
   return {
-    background: partial?.background ?? defaultGraphTheme.background,
-    gridColor: partial?.gridColor ?? defaultGraphTheme.gridColor,
-    gridSize: partial?.gridSize ?? defaultGraphTheme.gridSize,
+    background: partial?.background ?? base.background,
+    gridColor: partial?.gridColor ?? base.gridColor,
+    gridSize: partial?.gridSize ?? base.gridSize,
     node: {
-      ...defaultGraphTheme.node,
+      ...base.node,
       ...partial?.node,
     },
     edge: {
-      ...defaultGraphTheme.edge,
+      ...base.edge,
       ...partial?.edge,
     },
     hud: {
-      ...defaultGraphTheme.hud,
+      ...base.hud,
       ...partial?.hud,
     },
   }

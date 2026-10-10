@@ -3,8 +3,8 @@
   flex-direction: column;
   height: 100svh;
   width: 100%;
-  background: #0f0f0f;
-  color: #e5e7eb;
+  background: var(--app-bg);
+  color: var(--app-text);
 }
 
 .app-header {
@@ -12,7 +12,7 @@
   align-items: baseline;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid #262626;
+  border-bottom: 1px solid var(--app-border);
   flex-shrink: 0;
 }
 
@@ -21,13 +21,29 @@
   font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.02em;
-  color: #f9fafb;
+  color: var(--app-heading);
 }
 
 .app-header p {
   margin: 0;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--app-muted);
+}
+
+.app-theme-toggle {
+  align-self: center;
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.app-theme-toggle:hover {
+  background: var(--app-hover);
 }
 
 .app-canvas {

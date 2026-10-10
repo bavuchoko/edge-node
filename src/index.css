@@ -4,6 +4,26 @@
   box-sizing: border-box;
 }
 
+:root {
+  color-scheme: dark;
+  --app-bg: #0f0f0f;
+  --app-text: #e5e7eb;
+  --app-heading: #f9fafb;
+  --app-muted: #6b7280;
+  --app-border: #262626;
+  --app-hover: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --app-bg: #ffffff;
+  --app-text: #374151;
+  --app-heading: #111827;
+  --app-muted: #6b7280;
+  --app-border: #e5e7eb;
+  --app-hover: rgba(0, 0, 0, 0.05);
+}
+
 html,
 body,
 #root {
@@ -18,8 +38,8 @@ body {
     system-ui,
     -apple-system,
     sans-serif;
-  background: #0f0f0f;
-  color: #e5e7eb;
+  background: var(--app-bg);
+  color: var(--app-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { getHandlePosition } from '../geometry'
+import { useSystemColorMode, type ColorModePreference } from '../hooks/useColorMode'
 import { useConnectionDrag } from '../hooks/useConnectionDrag'
 import { useViewport } from '../hooks/useViewport'
 import { getEdges, getNodes, graphReducer } from '../store'
@@ -13,14 +14,22 @@ import { ConnectionLine } from './ConnectionLine'
 import { GraphEdge } from './GraphEdge'
 import { GraphNode } from './GraphNode'
 
-type GraphCanvasProps = {
+export type GraphCanvasProps = {
   initialState: GraphState
+  /** Overrides applied on top of the `colorMode` preset. */
   theme?: GraphTheme
+  /** Base color preset. `'system'` follows `prefers-color-scheme`. Defaults to `'dark'`. */
+  colorMode?: ColorModePreference
 }
 
-export function GraphCanvas({ initialState, theme }: GraphCanvasProps) {
+export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCanvasProps) {
   const [state, dispatch] = useReducer(graphReducer, initialState)
-  const resolvedTheme = useMemo(() => resolveGraphTheme(theme), [theme])
+  const systemColorMode = useSystemColorMode()
+  const resolvedColorMode = colorMode === 'system' ? systemColorMode : colorMode
+  const resolvedTheme = useMemo(
+    () => resolveGraphTheme(theme, resolvedColorMode),
+    [theme, resolvedColorMode],
+  )
   const themeStyle = useMemo(() => themeToCssVars(resolvedTheme), [resolvedTheme])
   const nodes = useMemo(() => getNodes(state), [state])
   const edges = useMemo(() => getEdges(state), [state])
@@ -181,6 +190,7 @@ export function GraphCanvas({ initialState, theme }: GraphCanvasProps) {
       ref={containerRef}
       className={`graph-canvas${isPanning ? ' is-panning' : ''}${state.connectionDraft ? ' is-connecting' : ''}`}
       style={themeStyle}
+      data-color-mode={resolvedColorMode}
       onPointerDown={onCanvasPointerDown}
       onPointerMove={movePan}
       onPointerUp={endPan}

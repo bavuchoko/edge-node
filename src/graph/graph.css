@@ -98,7 +98,7 @@
   border-radius: var(--graph-node-radius, 6px);
   background: var(--graph-node-bg, #1e1e1e);
   border: 1px solid var(--graph-node-border, #2e2e2e);
-  color: #f3f4f6;
+  color: var(--graph-node-title, #f3f4f6);
   text-align: left;
   box-shadow: var(--graph-node-shadow, 0 8px 24px rgba(0, 0, 0, 0.35));
   cursor: grab;
