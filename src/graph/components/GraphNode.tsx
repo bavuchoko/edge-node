@@ -11,9 +11,9 @@ export type NodeRenderContext = {
   /** Position on the hovered node's dependency chain, if one is being shown. */
   role?: DependencyRole
   /**
-   * This node's relation to the hovered node, when they are directly connected:
-   * the edge's `relation` if this node is the target, `inverseRelation` if it is
-   * the source.
+   * This node's relation to the previous node on the hovered node's chain
+   * (for a direct neighbor, the hovered node itself). Comes from the edge's
+   * `relation` (downstream side) / `inverseRelation` (upstream side).
    */
   relation?: string
   /** Outside the chain currently highlighted (or an invalid target while connecting). */
@@ -40,7 +40,7 @@ type GraphNodeProps<TData> = {
   editable: boolean
   /** Position relative to the hovered node's dependency chain. */
   role?: DependencyRole
-  /** This node's relation to the hovered node (direct neighbors only). */
+  /** Relation chip text on the hovered node's chain (see `NodeRenderContext.relation`). */
   relation?: string
   dimmed?: boolean
   onSelect: (id: string) => void

@@ -5,6 +5,7 @@ export {
   getDownstream,
   getUpstream,
   wouldCreateCycle,
+  type ChainRelation,
   type DependencyHighlight,
   type DependencyRole,
 } from './dependencies'

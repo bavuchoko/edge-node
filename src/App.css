@@ -89,7 +89,10 @@
 }
 
 .integration-card__titles h3 {
+  overflow: hidden;
   margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.02em;
@@ -102,10 +105,13 @@
 }
 
 .integration-card__role {
+  max-width: 110px;
+  overflow: hidden;
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

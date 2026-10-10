@@ -22,7 +22,9 @@ export function IntegrationCard({ node, ctx }: IntegrationCardProps) {
           <p>{integration.service} integration</p>
         </div>
         {ctx.relation ? (
-          <span className={`integration-card__role is-${ctx.role}`}>{ctx.relation}</span>
+          <span className={`integration-card__role is-${ctx.role}`} title={ctx.relation}>
+            {ctx.relation}
+          </span>
         ) : null}
       </div>
 

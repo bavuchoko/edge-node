@@ -7,16 +7,23 @@ import type { EdgeId, GraphEdge, NodeId } from './types'
  */
 export type DependencyRole = 'focus' | 'upstream' | 'downstream'
 
+/** A chain node's relation to its neighbor on the chain, read as "<node> <relation> <otherId>". */
+export type ChainRelation = {
+  relation: string
+  /** The adjacent chain node the relation refers to (the focus node for direct neighbors). */
+  otherId: NodeId
+}
+
 export type DependencyHighlight = {
   focusId: NodeId
   nodes: Map<NodeId, DependencyRole>
   edges: Map<EdgeId, 'upstream' | 'downstream'>
   /**
-   * Relation of each direct neighbor to the focus node, read as
-   * "neighbor <relation> focus": an outgoing edge's `relation` for its target,
-   * an incoming edge's `inverseRelation` for its source. Only set when present.
+   * Relations of chain nodes, taken from the chain edge(s) that reach them:
+   * downstream nodes get the edge's `relation` (toward its source), upstream
+   * nodes the edge's `inverseRelation` (toward its target). Only set when present.
    */
-  relations: Map<NodeId, string>
+  relations: Map<NodeId, ChainRelation[]>
 }
 
 function collect(
@@ -80,20 +87,27 @@ export function getDependencyHighlight(
   nodes.set(focusId, 'focus')
 
   const edgeRoles = new Map<EdgeId, 'upstream' | 'downstream'>()
-  const relations = new Map<NodeId, string>()
+  const relations = new Map<NodeId, ChainRelation[]>()
+  const addRelation = (id: NodeId, entry: ChainRelation) => {
+    const list = relations.get(id)
+    if (list) list.push(entry)
+    else relations.set(id, [entry])
+  }
+
   for (const edge of edges) {
-    if (edge.source === focusId && edge.relation) {
-      relations.set(edge.target, edge.relation)
-    } else if (edge.target === focusId && edge.inverseRelation) {
-      relations.set(edge.source, edge.inverseRelation)
-    }
     if (upstream.has(edge.source) && (edge.target === focusId || upstream.has(edge.target))) {
       edgeRoles.set(edge.id, 'upstream')
+      if (edge.inverseRelation) {
+        addRelation(edge.source, { relation: edge.inverseRelation, otherId: edge.target })
+      }
     } else if (
       downstream.has(edge.target) &&
       (edge.source === focusId || downstream.has(edge.source))
     ) {
       edgeRoles.set(edge.id, 'downstream')
+      if (edge.relation) {
+        addRelation(edge.target, { relation: edge.relation, otherId: edge.source })
+      }
     }
   }
 

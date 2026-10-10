@@ -7,7 +7,12 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { getDependencyHighlight, getUpstream, type DependencyRole } from '../dependencies'
+import {
+  getDependencyHighlight,
+  getUpstream,
+  type ChainRelation,
+  type DependencyRole,
+} from '../dependencies'
 import { getBezierMidpoint, getHandlePosition } from '../geometry'
 import { useSystemColorMode, type ColorModePreference } from '../hooks/useColorMode'
 import { useConnectionDrag } from '../hooks/useConnectionDrag'
@@ -380,7 +385,7 @@ export function GraphCanvas<TData = NodeData>({
                 state.selection.id === node.id
               }
               role={highlight?.nodes.get(node.id)}
-              relation={highlight?.relations.get(node.id)}
+              relation={formatRelations(highlight?.relations.get(node.id))}
               dimmed={
                 invalidTargets
                   ? invalidTargets.has(node.id)
@@ -438,6 +443,15 @@ export function GraphCanvas<TData = NodeData>({
       </div>
     </div>
   )
+}
+
+/**
+ * Chip text for a chain node: its relation to the previous node on the chain.
+ * Several routes with different relations are comma-joined, each once.
+ */
+function formatRelations(list: ChainRelation[] | undefined): string | undefined {
+  if (!list?.length) return undefined
+  return [...new Set(list.map((entry) => entry.relation))].join(', ')
 }
 
 /** `data.title` when the node has one (built-in card data), else its id. */
