@@ -12,6 +12,10 @@ export {
   useSystemColorMode,
   type ColorModePreference,
 } from './hooks/useColorMode'
+export type {
+  GraphCallbackResult,
+  GraphPersistenceCallbacks,
+} from './hooks/useGraphPersistence'
 export { layoutColumns, type LayoutNodeInput } from './layout'
 export { createInitialState } from './store'
 export {

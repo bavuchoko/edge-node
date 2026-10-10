@@ -50,6 +50,8 @@ export type GraphAction =
   | { type: 'cancelConnection' }
   | { type: 'completeConnection'; targetId: NodeId; allowCycles?: boolean }
   | { type: 'updateEdge'; id: EdgeId; patch: Partial<Pick<GraphEdge, 'kind' | 'label'>> }
+  | { type: 'addEdge'; edge: GraphEdge }
+  | { type: 'removeEdge'; id: EdgeId }
   | { type: 'deleteSelection' }
 
 export function graphReducer(state: GraphState, action: GraphAction): GraphState {
@@ -150,6 +152,23 @@ export function graphReducer(state: GraphState, action: GraphAction): GraphState
       const next: GraphEdge = { ...edge, ...action.patch }
       if (!next.label) delete next.label
       return { ...state, edges: { ...state.edges, [action.id]: next } }
+    }
+
+    case 'addEdge': {
+      const { edge } = action
+      if (state.edges[edge.id]) return state
+      if (!state.nodes[edge.source] || !state.nodes[edge.target]) return state
+      return { ...state, edges: { ...state.edges, [edge.id]: edge } }
+    }
+
+    case 'removeEdge': {
+      if (!state.edges[action.id]) return state
+      const { [action.id]: _, ...rest } = state.edges
+      const selection =
+        state.selection?.type === 'edge' && state.selection.id === action.id
+          ? null
+          : state.selection
+      return { ...state, edges: rest, selection }
     }
 
     case 'deleteSelection': {

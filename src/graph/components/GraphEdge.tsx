@@ -11,6 +11,8 @@ type GraphEdgeProps = {
   /** Set when the edge lies on the hovered node's dependency chain. */
   role?: 'upstream' | 'downstream'
   dimmed?: boolean
+  /** Waiting on `onConnect` to confirm. */
+  pending?: boolean
   zoom: number
   hitWidthPx?: number
   arrowSizePx?: number
@@ -26,6 +28,7 @@ export function GraphEdge({
   selected,
   role,
   dimmed = false,
+  pending = false,
   zoom,
   hitWidthPx = 32,
   arrowSizePx = 9,
@@ -42,6 +45,7 @@ export function GraphEdge({
     selected && 'is-selected',
     role && `is-${role}`,
     dimmed && 'is-dimmed',
+    pending && 'is-pending',
   ]
     .filter(Boolean)
     .join(' ')

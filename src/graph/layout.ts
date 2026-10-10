@@ -8,6 +8,8 @@ export type LayoutNodeInput = {
   column: number
   /** Order within column (top to bottom). */
   row: number
+  /** Fixed position (e.g. restored from storage). Overrides `column` / `row` placement. */
+  position?: Point
   width?: number
   height?: number
 }
@@ -38,7 +40,7 @@ export function layoutColumns(inputs: LayoutNodeInput[]): GraphNode[] {
   return inputs.map((input) => {
     const width = input.width ?? DEFAULT_NODE_WIDTH
     const height = input.height ?? DEFAULT_NODE_HEIGHT
-    const position: Point = {
+    const position: Point = input.position ?? {
       x: columnX.get(input.column) ?? 0,
       y: ORIGIN_Y + input.row * (height + ROW_GAP),
     }

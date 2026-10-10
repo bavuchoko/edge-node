@@ -3,6 +3,7 @@ import { getDependencyHighlight, getUpstream, type DependencyRole } from '../dep
 import { getBezierMidpoint, getHandlePosition } from '../geometry'
 import { useSystemColorMode, type ColorModePreference } from '../hooks/useColorMode'
 import { useConnectionDrag } from '../hooks/useConnectionDrag'
+import { useGraphPersistence, type GraphPersistenceCallbacks } from '../hooks/useGraphPersistence'
 import { useViewport } from '../hooks/useViewport'
 import { getEdges, getNodes, graphReducer } from '../store'
 import {
@@ -16,7 +17,12 @@ import { EdgeEditor } from './EdgeEditor'
 import { GraphEdge } from './GraphEdge'
 import { GraphNode } from './GraphNode'
 
-export type GraphCanvasProps = {
+/**
+ * Change callbacks (`onConnect`, `onEdgeUpdate`, `onEdgeDelete`, `onNodeMove`)
+ * apply the change locally first; return `false` or reject to roll it back.
+ * While an edge callback's promise is pending the edge is drawn faded.
+ */
+export type GraphCanvasProps = GraphPersistenceCallbacks & {
   initialState: GraphState
   /** Overrides applied on top of the `colorMode` preset. */
   theme?: GraphTheme
@@ -34,8 +40,20 @@ export function GraphCanvas({
   theme,
   colorMode = 'dark',
   allowCycles = false,
+  onConnect,
+  onEdgeUpdate,
+  onEdgeDelete,
+  onNodeMove,
 }: GraphCanvasProps) {
   const [state, dispatch] = useReducer(graphReducer, initialState)
+  const { savingEdgeIds, deleteSelection, reportNodeMove } = useGraphPersistence({
+    state,
+    dispatch,
+    onConnect,
+    onEdgeUpdate,
+    onEdgeDelete,
+    onNodeMove,
+  })
   const systemColorMode = useSystemColorMode()
   const resolvedColorMode = colorMode === 'system' ? systemColorMode : colorMode
   const resolvedTheme = useMemo(
@@ -95,6 +113,7 @@ export function GraphCanvas({
     if (event.button !== 0) return
     const node = nodesRef.current[id]
     if (!node) return
+    const startPosition = node.position
 
     const world = clientToWorldRef.current(event.clientX, event.clientY)
     nodeDrag.current = {
@@ -124,6 +143,7 @@ export function GraphCanvas({
       const drag = nodeDrag.current
       if (!drag || drag.pointerId !== e.pointerId) return
       nodeDrag.current = null
+      reportNodeMove(drag.id, startPosition)
       // Hover events were ignored during the drag; resync with where the pointer ended up.
       const under = document.elementFromPoint(e.clientX, e.clientY)
       const hoverEl = under?.closest<HTMLElement>('.graph-node')
@@ -136,7 +156,7 @@ export function GraphCanvas({
     window.addEventListener('pointermove', onWindowMove)
     window.addEventListener('pointerup', onWindowUp)
     window.addEventListener('pointercancel', onWindowUp)
-  }, [])
+  }, [reportNodeMove])
 
   const onNodeSizeChange = useCallback(
     (id: string, size: { width: number; height: number }) => {
@@ -171,13 +191,13 @@ export function GraphCanvas({
       if (event.key === 'Delete' || event.key === 'Backspace') {
         if (state.selection) {
           event.preventDefault()
-          dispatch({ type: 'deleteSelection' })
+          deleteSelection()
         }
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [state.selection])
+  }, [state.selection, deleteSelection])
 
   const draftSourcePoint = useMemo(() => {
     if (!state.connectionDraft) return null
@@ -277,6 +297,7 @@ export function GraphCanvas({
                 label={edge.label}
                 role={highlight?.edges.get(edge.id)}
                 dimmed={highlight ? !highlight.edges.has(edge.id) : false}
+                pending={savingEdgeIds.has(edge.id)}
                 zoom={zoom}
                 hitWidthPx={resolvedTheme.edge.hitWidth}
                 arrowSizePx={resolvedTheme.edge.arrowSize}
@@ -341,7 +362,7 @@ export function GraphCanvas({
           position={editorPosition}
           autoFocus={state.selection?.type === 'edge' && state.selection.created}
           onChange={(patch) => dispatch({ type: 'updateEdge', id: editingEdge.id, patch })}
-          onDelete={() => dispatch({ type: 'deleteSelection' })}
+          onDelete={deleteSelection}
           onClose={() => dispatch({ type: 'setSelection', selection: null })}
         />
       ) : null}

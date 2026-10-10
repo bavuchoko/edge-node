@@ -73,6 +73,10 @@
   opacity: var(--graph-dep-dim-opacity, 0.25);
 }
 
+.graph-edge.is-pending {
+  opacity: 0.5;
+}
+
 .graph-edge__hit {
   fill: none;
   stroke: transparent;

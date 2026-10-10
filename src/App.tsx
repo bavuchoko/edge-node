@@ -1,10 +1,24 @@
 import { useEffect } from 'react'
-import { GraphCanvas, useColorMode } from './graph'
+import { GraphCanvas, useColorMode, type GraphEdge, type GraphNode } from './graph'
 import { createDemoGraph } from './demoGraph'
 import './graph/graph.css'
 import './App.css'
 
 const demo = createDemoGraph()
+
+/** Demo stand-in for a real API (e.g. `fetch('/api/edges', { method: 'POST', ... })`). */
+async function fakeRequest(action: string, payload: unknown) {
+  await new Promise((resolve) => setTimeout(resolve, 400))
+  console.info(`[demo api] ${action}`, payload)
+}
+
+const graphApi = {
+  onConnect: (edge: GraphEdge) => fakeRequest('POST /edges', edge),
+  onEdgeUpdate: (edge: GraphEdge) => fakeRequest(`PATCH /edges/${edge.id}`, edge),
+  onEdgeDelete: (edge: GraphEdge) => fakeRequest(`DELETE /edges/${edge.id}`, edge),
+  onNodeMove: (node: GraphNode) =>
+    fakeRequest(`PATCH /nodes/${node.id}`, { position: node.position }),
+}
 
 function App() {
   const { resolvedMode, toggle } = useColorMode({ storageKey: 'edge-node:theme' })
@@ -30,7 +44,7 @@ function App() {
         </button>
       </header>
       <section className="app-canvas">
-        <GraphCanvas initialState={demo} colorMode={resolvedMode} />
+        <GraphCanvas initialState={demo} colorMode={resolvedMode} {...graphApi} />
       </section>
     </main>
   )

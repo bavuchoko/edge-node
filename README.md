@@ -42,25 +42,83 @@ npm run dev
 ## 기본 사용
 
 ```tsx
-import { createDemoGraph, GraphCanvas, type GraphTheme } from './graph'
-import './graph/graph.css'
+import { createInitialState, GraphCanvas, layoutColumns } from 'edge-node'
+import 'edge-node/style.css'
 
-const demo = createDemoGraph()
-
-const theme: GraphTheme = {
-  background: '#141414',
-  edge: { color: '#6b7280', width: 2 },
-}
+const initialState = createInitialState(
+  layoutColumns([
+    { id: 'build', column: 0, row: 0, data: { title: 'Build', status: 'success' } },
+    { id: 'deploy', column: 1, row: 0, data: { title: 'Deploy', status: 'idle' } },
+  ]),
+  [{ source: 'build', target: 'deploy', kind: 'required', label: 'artifact' }],
+)
 
 export function App() {
-  return <GraphCanvas initialState={demo} theme={theme} />
+  return <GraphCanvas initialState={initialState} colorMode="system" />
 }
 ```
 
-`theme`은 선택 사항입니다. 생략하면 기본 다크 테마가 적용됩니다.  
-필요한 필드만 넘기면 나머지는 기본값을 유지합니다.
+## 변경 저장 (`onConnect` / `onEdgeUpdate` / `onEdgeDelete` / `onNodeMove`)
+
+연결선이 생기거나, 바뀌거나, 지워질 때, 그리고 노드를 옮겼을 때 호출됩니다. API로 관계와 배치를 저장할 때 씁니다.
+
+| 콜백 | 호출 시점 |
+|------|-----------|
+| `onConnect(edge)` | 새 연결 직후 뜨는 편집 창(실선/점선, 라벨)이 닫힐 때(`Enter`, `Esc`, 다른 곳 클릭) 한 번. 닫히기 전에 삭제하면 호출되지 않음 |
+| `onEdgeUpdate(edge, previous)` | 기존 연결선을 클릭해 연 편집 창이 닫힐 때, `kind`·`label`이 실제로 바뀐 경우에만 한 번 |
+| `onEdgeDelete(edge)` | 확정된 연결선이 삭제될 때(`Delete` 키, 휴지통 버튼). 노드를 삭제하면 그 노드에 붙은 연결선마다 한 번씩 |
+| `onNodeMove(node, previous)` | 노드를 드래그해서 놓을 때 한 번(드래그 중에는 호출 안 됨). 실제로 움직였을 때만. `node.position`이 새 위치 |
+
+```tsx
+<GraphCanvas
+  initialState={initialState}
+  onConnect={async (edge) => {
+    const res = await fetch('/api/edges', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(edge),
+    })
+    if (!res.ok) return false
+  }}
+  onEdgeUpdate={async (edge) => {
+    const res = await fetch(`/api/edges/${encodeURIComponent(edge.id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: edge.kind, label: edge.label }),
+    })
+    if (!res.ok) return false
+  }}
+  onEdgeDelete={async (edge) => {
+    const res = await fetch(`/api/edges/${encodeURIComponent(edge.id)}`, { method: 'DELETE' })
+    if (!res.ok) return false
+  }}
+/>
+```
+
+- 변경은 화면에 먼저 반영됩니다. `false`를 반환하거나 Promise가 reject되면 되돌립니다
+  (연결 → 제거, 수정 → 이전 값, 삭제 → 복원, 이동 → 원래 위치).
+- Promise가 끝날 때까지 해당 연결선은 반투명으로 표시됩니다.
+- `edge`는 `{ id, source, target, kind?, label? }`이고, target이 source에 의존한다는 뜻입니다.
+  `id`는 `` `${source}->${target}` `` 형식입니다.
+
+### 저장한 위치로 불러오기
+
+`layoutColumns`에 `position`을 넘기면 열/행 자동 배치 대신 그 위치를 씁니다.
+저장된 위치가 없는 노드만 자동 배치됩니다.
+
+```ts
+const saved = await fetch('/api/nodes').then((r) => r.json()) // [{ id, position: { x, y } }, ...]
+const positions = new Map(saved.map((n) => [n.id, n.position]))
+
+const nodes = layoutColumns(
+  inputs.map((input) => ({ ...input, position: positions.get(input.id) })),
+)
+```
 
 ## 테마 (`GraphTheme`)
+
+`theme`은 선택 사항입니다. 생략하면 `colorMode` 프리셋(기본 다크)이 적용됩니다.  
+필요한 필드만 넘기면 나머지는 기본값을 유지합니다.
 
 ```ts
 type GraphTheme = {
