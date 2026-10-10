@@ -1,6 +1,8 @@
+import { wouldCreateCycle } from './dependencies'
 import type {
   EdgeId,
   GraphEdge,
+  GraphEdgeInput,
   GraphNode,
   GraphState,
   NodeId,
@@ -15,7 +17,7 @@ function createEdgeId(source: NodeId, target: NodeId): EdgeId {
 
 export function createInitialState(
   nodes: GraphNode[],
-  edges: Array<{ source: NodeId; target: NodeId }>,
+  edges: GraphEdgeInput[],
   viewport: Viewport = { x: 40, y: 40, zoom: 1 },
 ): GraphState {
   const nodeMap: Record<NodeId, GraphNode> = {}
@@ -26,7 +28,7 @@ export function createInitialState(
   const edgeMap: Record<EdgeId, GraphEdge> = {}
   for (const edge of edges) {
     const id = createEdgeId(edge.source, edge.target)
-    edgeMap[id] = { id, source: edge.source, target: edge.target }
+    edgeMap[id] = { ...edge, id }
   }
 
   return {
@@ -46,7 +48,7 @@ export type GraphAction =
   | { type: 'startConnection'; sourceId: NodeId; pointer: Point }
   | { type: 'updateConnection'; pointer: Point }
   | { type: 'cancelConnection' }
-  | { type: 'completeConnection'; targetId: NodeId }
+  | { type: 'completeConnection'; targetId: NodeId; allowCycles?: boolean }
   | { type: 'deleteSelection' }
 
 export function graphReducer(state: GraphState, action: GraphAction): GraphState {
@@ -127,7 +129,9 @@ export function graphReducer(state: GraphState, action: GraphAction): GraphState
       if (state.edges[id]) {
         return { ...state, connectionDraft: null }
       }
-      // Also reject reverse duplicate if already connected either way for simplicity? Plan says reject duplicate same direction only.
+      if (!action.allowCycles && wouldCreateCycle(Object.values(state.edges), sourceId, targetId)) {
+        return { ...state, connectionDraft: null }
+      }
       return {
         ...state,
         connectionDraft: null,

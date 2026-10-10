@@ -1,8 +1,8 @@
 import {
   createInitialState,
   layoutColumns,
+  type GraphEdgeInput,
   type GraphState,
-  type NodeId,
 } from './graph'
 
 export function createDemoGraph(): GraphState {
@@ -81,13 +81,14 @@ export function createDemoGraph(): GraphState {
     },
   ])
 
-  const edges: Array<{ source: NodeId; target: NodeId }> = [
-    { source: 'betaflight', target: 'auto-release' },
-    { source: 'absa-root', target: 'auto-release' },
-    { source: 'auto-release', target: 'publish-npm' },
-    { source: 'auto-release', target: 'publish-docs' },
+  // `target` depends on `source`; optional edges are soft (ordering-only) dependencies.
+  const edges: GraphEdgeInput[] = [
+    { source: 'betaflight', target: 'auto-release', label: 'artifact' },
+    { source: 'absa-root', target: 'auto-release', label: 'parent POM' },
+    { source: 'auto-release', target: 'publish-npm', label: 'on tag' },
+    { source: 'auto-release', target: 'publish-docs', kind: 'optional' },
     { source: 'publish-npm', target: 'notify' },
-    { source: 'publish-docs', target: 'notify' },
+    { source: 'publish-docs', target: 'notify', kind: 'optional' },
   ]
 
   return createInitialState(nodes, edges, { x: 48, y: 64, zoom: 0.95 })

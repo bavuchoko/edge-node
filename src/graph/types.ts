@@ -21,11 +21,24 @@ export type GraphNode = {
   data: NodeData
 }
 
+/**
+ * - `required`: target cannot run without source (solid line)
+ * - `optional`: soft / ordering-only dependency (dashed line)
+ */
+export type EdgeKind = 'required' | 'optional'
+
+/** Directed edge: `target` depends on `source`. */
 export type GraphEdge = {
   id: EdgeId
   source: NodeId
   target: NodeId
+  /** Defaults to `'required'`. */
+  kind?: EdgeKind
+  /** Short text drawn at the middle of the edge. */
+  label?: string
 }
+
+export type GraphEdgeInput = Omit<GraphEdge, 'id'>
 
 export type Viewport = {
   x: number

@@ -1,5 +1,13 @@
 export { GraphCanvas, type GraphCanvasProps } from './components/GraphCanvas'
 export {
+  getDependencyHighlight,
+  getDownstream,
+  getUpstream,
+  wouldCreateCycle,
+  type DependencyHighlight,
+  type DependencyRole,
+} from './dependencies'
+export {
   useColorMode,
   useSystemColorMode,
   type ColorModePreference,
@@ -18,7 +26,9 @@ export {
 } from './theme'
 export type {
   EdgeId,
+  EdgeKind,
   GraphEdge,
+  GraphEdgeInput,
   GraphNode,
   GraphState,
   NodeData,

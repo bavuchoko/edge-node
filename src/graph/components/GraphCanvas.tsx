@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { getDependencyHighlight, getUpstream, type DependencyRole } from '../dependencies'
 import { getHandlePosition } from '../geometry'
 import { useSystemColorMode, type ColorModePreference } from '../hooks/useColorMode'
 import { useConnectionDrag } from '../hooks/useConnectionDrag'
@@ -20,9 +21,19 @@ export type GraphCanvasProps = {
   theme?: GraphTheme
   /** Base color preset. `'system'` follows `prefers-color-scheme`. Defaults to `'dark'`. */
   colorMode?: ColorModePreference
+  /**
+   * Allow connections that close a dependency cycle (A → B → A).
+   * Defaults to `false`: such connections are rejected.
+   */
+  allowCycles?: boolean
 }
 
-export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCanvasProps) {
+export function GraphCanvas({
+  initialState,
+  theme,
+  colorMode = 'dark',
+  allowCycles = false,
+}: GraphCanvasProps) {
   const [state, dispatch] = useReducer(graphReducer, initialState)
   const systemColorMode = useSystemColorMode()
   const resolvedColorMode = colorMode === 'system' ? systemColorMode : colorMode
@@ -64,7 +75,7 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
       dispatch({ type: 'updateConnection', pointer })
     },
     onComplete: (targetId) => {
-      dispatch({ type: 'completeConnection', targetId })
+      dispatch({ type: 'completeConnection', targetId, allowCycles })
     },
     onCancel: () => {
       dispatch({ type: 'cancelConnection' })
@@ -76,6 +87,8 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
     pointerId: number
     offset: Point
   } | null>(null)
+
+  const [hoveredNodeId, setHoveredNodeId] = useState<NodeId | null>(null)
 
   const onNodeDragStart = useCallback((id: NodeId, event: React.PointerEvent) => {
     if (event.button !== 0) return
@@ -110,6 +123,10 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
       const drag = nodeDrag.current
       if (!drag || drag.pointerId !== e.pointerId) return
       nodeDrag.current = null
+      // Hover events were ignored during the drag; resync with where the pointer ended up.
+      const under = document.elementFromPoint(e.clientX, e.clientY)
+      const hoverEl = under?.closest<HTMLElement>('.graph-node')
+      setHoveredNodeId(hoverEl?.dataset.nodeId ?? null)
       window.removeEventListener('pointermove', onWindowMove)
       window.removeEventListener('pointerup', onWindowUp)
       window.removeEventListener('pointercancel', onWindowUp)
@@ -168,7 +185,35 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
     return getHandlePosition(node, 'right')
   }, [state.connectionDraft, state.nodes])
 
+  const onNodeHoverChange = useCallback((id: NodeId, hovered: boolean) => {
+    // Keep the dragged node focused even if the pointer briefly outruns it.
+    if (nodeDrag.current) return
+    setHoveredNodeId((current) => (hovered ? id : current === id ? null : current))
+  }, [])
+
+  /** Dependency chain through the hovered node. Suppressed while panning or connecting. */
+  const highlight = useMemo(() => {
+    if (!hoveredNodeId || !state.nodes[hoveredNodeId]) return null
+    if (isPanning || state.connectionDraft) return null
+    return getDependencyHighlight(edges, hoveredNodeId)
+  }, [edges, hoveredNodeId, state.nodes, isPanning, state.connectionDraft])
+
+  /** While connecting: nodes the draft cannot end on (self, duplicate, or a cycle). */
+  const invalidTargets = useMemo(() => {
+    const draft = state.connectionDraft
+    if (!draft) return null
+    const invalid = new Set<NodeId>([draft.sourceId])
+    for (const edge of edges) {
+      if (edge.source === draft.sourceId) invalid.add(edge.target)
+    }
+    if (!allowCycles) {
+      for (const id of getUpstream(edges, draft.sourceId)) invalid.add(id)
+    }
+    return invalid
+  }, [state.connectionDraft, edges, allowCycles])
+
   const { x, y, zoom } = state.viewport
+
   const transform = `translate(${x}px, ${y}px) scale(${zoom})`
 
   const onCanvasPointerDown = (event: React.PointerEvent) => {
@@ -210,8 +255,13 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
                 id={edge.id}
                 source={source}
                 target={target}
+                kind={edge.kind}
+                label={edge.label}
+                role={highlight?.edges.get(edge.id)}
+                dimmed={highlight ? !highlight.edges.has(edge.id) : false}
                 zoom={zoom}
                 hitWidthPx={resolvedTheme.edge.hitWidth}
+                arrowSizePx={resolvedTheme.edge.arrowSize}
                 selected={
                   state.selection?.type === 'edge' &&
                   state.selection.id === edge.id
@@ -229,6 +279,7 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
             <ConnectionLine
               source={draftSourcePoint}
               target={state.connectionDraft.pointer}
+              arrowLength={resolvedTheme.edge.arrowSize / Math.max(zoom, 0.01)}
             />
           ) : null}
         </svg>
@@ -242,12 +293,21 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
                 state.selection?.type === 'node' &&
                 state.selection.id === node.id
               }
+              role={highlight?.nodes.get(node.id)}
+              dimmed={
+                invalidTargets
+                  ? invalidTargets.has(node.id)
+                  : highlight
+                    ? !highlight.nodes.has(node.id)
+                    : false
+              }
               onSelect={(id) =>
                 dispatch({
                   type: 'setSelection',
                   selection: { type: 'node', id },
                 })
               }
+              onHoverChange={onNodeHoverChange}
               onDragStart={onNodeDragStart}
               onSourceHandleDown={connection.startFromHandle}
               onSizeChange={onNodeSizeChange}
@@ -257,6 +317,14 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
       </div>
 
       <div className="graph-hud" aria-hidden>
+        {highlight ? (
+          <span className="graph-hud__legend">
+            <span className="graph-hud__swatch graph-hud__swatch--upstream" />
+            Depends on ({countRole(highlight.nodes, 'upstream')})
+            <span className="graph-hud__swatch graph-hud__swatch--downstream" />
+            Depended on by ({countRole(highlight.nodes, 'downstream')})
+          </span>
+        ) : null}
         <span>
           Scroll to zoom · Drag empty space to pan · Drag right handle to
           connect · Del to remove
@@ -264,4 +332,10 @@ export function GraphCanvas({ initialState, theme, colorMode = 'dark' }: GraphCa
       </div>
     </div>
   )
+}
+
+function countRole(nodes: Map<NodeId, DependencyRole>, role: DependencyRole): number {
+  let count = 0
+  for (const value of nodes.values()) if (value === role) count++
+  return count
 }

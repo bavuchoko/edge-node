@@ -36,9 +36,23 @@ export type GraphTheme = {
     draftColor?: string
     draftWidth?: number
     draftDash?: string
+    /** Arrowhead length in screen px. 0 hides arrows. */
+    arrowSize?: number
+    /** Dash pattern for `kind: 'optional'` edges. */
+    optionalDash?: string
+    labelColor?: string
   }
   hud?: {
     color?: string
+  }
+  /** Colors used when a node is hovered to show its dependency chain. */
+  dependency?: {
+    /** Nodes the hovered node depends on (incoming side). */
+    upstreamColor?: string
+    /** Nodes that depend on the hovered node (outgoing side). */
+    downstreamColor?: string
+    /** Opacity of nodes/edges outside the chain. */
+    dimOpacity?: number
   }
 }
 
@@ -74,9 +88,17 @@ export type ResolvedGraphTheme = {
     draftColor: string
     draftWidth: number
     draftDash: string
+    arrowSize: number
+    optionalDash: string
+    labelColor: string
   }
   hud: {
     color: string
+  }
+  dependency: {
+    upstreamColor: string
+    downstreamColor: string
+    dimOpacity: number
   }
 }
 
@@ -112,9 +134,17 @@ export const darkGraphTheme: ResolvedGraphTheme = {
     draftColor: '#60a5fa',
     draftWidth: 2,
     draftDash: '6 4',
+    arrowSize: 9,
+    optionalDash: '5 5',
+    labelColor: '#9ca3af',
   },
   hud: {
     color: '#6b7280',
+  },
+  dependency: {
+    upstreamColor: '#a78bfa',
+    downstreamColor: '#f59e0b',
+    dimOpacity: 0.25,
   },
 }
 
@@ -150,9 +180,17 @@ export const lightGraphTheme: ResolvedGraphTheme = {
     draftColor: '#3b82f6',
     draftWidth: 2,
     draftDash: '6 4',
+    arrowSize: 9,
+    optionalDash: '5 5',
+    labelColor: '#6b7280',
   },
   hud: {
     color: '#6b7280',
+  },
+  dependency: {
+    upstreamColor: '#7c3aed',
+    downstreamColor: '#d97706',
+    dimOpacity: 0.3,
   },
 }
 
@@ -185,6 +223,10 @@ export function resolveGraphTheme(
     hud: {
       ...base.hud,
       ...partial?.hud,
+    },
+    dependency: {
+      ...base.dependency,
+      ...partial?.dependency,
     },
   }
 }
@@ -219,5 +261,10 @@ export function themeToCssVars(theme: ResolvedGraphTheme): CSSProperties {
     ['--graph-edge-draft-width' as string]: String(theme.edge.draftWidth),
     ['--graph-edge-draft-dash' as string]: theme.edge.draftDash,
     ['--graph-hud-color' as string]: theme.hud.color,
+    ['--graph-edge-optional-dash' as string]: theme.edge.optionalDash,
+    ['--graph-edge-label-color' as string]: theme.edge.labelColor,
+    ['--graph-dep-upstream' as string]: theme.dependency.upstreamColor,
+    ['--graph-dep-downstream' as string]: theme.dependency.downstreamColor,
+    ['--graph-dep-dim-opacity' as string]: String(theme.dependency.dimOpacity),
   }
 }

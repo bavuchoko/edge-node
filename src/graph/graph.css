@@ -48,6 +48,31 @@
   cursor: pointer;
 }
 
+.graph-edge {
+  color: var(--graph-edge-color, #6b7280);
+  transition: opacity 0.15s ease;
+}
+
+.graph-edge:hover {
+  color: var(--graph-edge-hover-color, #9ca3af);
+}
+
+.graph-edge.is-upstream {
+  color: var(--graph-dep-upstream, #a78bfa);
+}
+
+.graph-edge.is-downstream {
+  color: var(--graph-dep-downstream, #f59e0b);
+}
+
+.graph-edge.is-selected {
+  color: var(--graph-edge-selected-color, #93c5fd);
+}
+
+.graph-edge.is-dimmed {
+  opacity: var(--graph-dep-dim-opacity, 0.25);
+}
+
 .graph-edge__hit {
   fill: none;
   stroke: transparent;
@@ -56,21 +81,52 @@
 
 .graph-edge__path {
   fill: none;
-  stroke: var(--graph-edge-color, #6b7280);
+  stroke: currentColor;
   stroke-width: var(--graph-edge-width, 2);
   pointer-events: none;
   vector-effect: non-scaling-stroke;
   transition: stroke 0.12s ease, stroke-width 0.12s ease;
 }
 
+.graph-edge--optional .graph-edge__path {
+  stroke-dasharray: var(--graph-edge-optional-dash, 5 5);
+}
+
 .graph-edge:hover .graph-edge__path {
-  stroke: var(--graph-edge-hover-color, #9ca3af);
+  stroke-width: var(--graph-edge-hover-width, 2.75);
+}
+
+.graph-edge.is-upstream .graph-edge__path,
+.graph-edge.is-downstream .graph-edge__path {
   stroke-width: var(--graph-edge-hover-width, 2.75);
 }
 
 .graph-edge.is-selected .graph-edge__path {
-  stroke: var(--graph-edge-selected-color, #93c5fd);
   stroke-width: var(--graph-edge-selected-width, 3);
+}
+
+.graph-edge__arrow {
+  fill: currentColor;
+  pointer-events: none;
+  transition: fill 0.12s ease;
+}
+
+.graph-edge__label {
+  fill: var(--graph-edge-label-color, #9ca3af);
+  font-size: 11px;
+  font-weight: 500;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--graph-bg, #141414);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.graph-edge.is-upstream .graph-edge__label,
+.graph-edge.is-downstream .graph-edge__label,
+.graph-edge.is-selected .graph-edge__label {
+  fill: currentColor;
 }
 
 .graph-connection-line__path {
@@ -80,6 +136,11 @@
   stroke-dasharray: var(--graph-edge-draft-dash, 6 4);
   pointer-events: none;
   vector-effect: non-scaling-stroke;
+}
+
+.graph-connection-line__arrow {
+  fill: var(--graph-edge-draft-color, #60a5fa);
+  pointer-events: none;
 }
 
 .graph-nodes {
@@ -103,6 +164,7 @@
   box-shadow: var(--graph-node-shadow, 0 8px 24px rgba(0, 0, 0, 0.35));
   cursor: grab;
   overflow: visible;
+  transition: opacity 0.15s ease;
 }
 
 .graph-node:hover {
@@ -116,11 +178,50 @@
     var(--graph-node-shadow, 0 8px 24px rgba(0, 0, 0, 0.4));
 }
 
+.graph-node.is-upstream {
+  border-color: var(--graph-dep-upstream, #a78bfa);
+}
+
+.graph-node.is-downstream {
+  border-color: var(--graph-dep-downstream, #f59e0b);
+}
+
+.graph-node.is-dimmed {
+  opacity: var(--graph-dep-dim-opacity, 0.25);
+}
+
 .graph-node__header {
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-bottom: 10px;
+}
+
+.graph-node__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.graph-node__role {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+.graph-node__role--upstream {
+  color: var(--graph-dep-upstream, #a78bfa);
+  background: color-mix(in srgb, var(--graph-dep-upstream, #a78bfa) 14%, transparent);
+}
+
+.graph-node__role--downstream {
+  color: var(--graph-dep-downstream, #f59e0b);
+  background: color-mix(in srgb, var(--graph-dep-downstream, #f59e0b) 14%, transparent);
 }
 
 .graph-node__status {
@@ -240,4 +341,35 @@
   font-size: 12px;
   pointer-events: none;
   letter-spacing: 0.01em;
+}
+
+.graph-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.graph-hud__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-hud__swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.graph-hud__swatch:not(:first-child) {
+  margin-left: 8px;
+}
+
+.graph-hud__swatch--upstream {
+  background: var(--graph-dep-upstream, #a78bfa);
+}
+
+.graph-hud__swatch--downstream {
+  background: var(--graph-dep-downstream, #f59e0b);
 }
