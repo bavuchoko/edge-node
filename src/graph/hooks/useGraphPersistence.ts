@@ -16,12 +16,12 @@ export type GraphCallbackResult = void | boolean | Promise<void | boolean>
 export type GraphPersistenceCallbacks<TData = NodeData> = {
   /**
    * A new connection was confirmed: called once when its editor closes
-   * (Enter, Esc or clicking elsewhere) with the final `kind` and `label`.
+   * (Enter, Esc or clicking elsewhere) with the final `kind`, `label` and relations.
    * Not called if the connection is deleted before that.
    */
   onConnect?: (edge: GraphEdge) => GraphCallbackResult
   /**
-   * An existing connection's `kind` / `label` changed: called once when its
+   * An existing connection's `kind` / `label` / relations changed: called once when its
    * editor closes, only if something actually changed.
    */
   onEdgeUpdate?: (edge: GraphEdge, previous: GraphEdge) => GraphCallbackResult
@@ -45,7 +45,9 @@ type UseGraphPersistenceArgs<TData> = GraphPersistenceCallbacks<TData> & {
 function hasEdgeChanged(before: GraphEdge, after: GraphEdge): boolean {
   return (
     (before.kind ?? 'required') !== (after.kind ?? 'required') ||
-    (before.label ?? '') !== (after.label ?? '')
+    (before.label ?? '') !== (after.label ?? '') ||
+    (before.relation ?? '') !== (after.relation ?? '') ||
+    (before.inverseRelation ?? '') !== (after.inverseRelation ?? '')
   )
 }
 
@@ -123,7 +125,12 @@ export function useGraphPersistence<TData>({
             dispatch({
               type: 'updateEdge',
               id: edge.id,
-              patch: { kind: previous.kind, label: previous.label },
+              patch: {
+                kind: previous.kind,
+                label: previous.label,
+                relation: previous.relation,
+                inverseRelation: previous.inverseRelation,
+              },
             }),
           )
         }

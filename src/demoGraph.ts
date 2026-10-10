@@ -126,13 +126,46 @@ export function createDemoGraph(): GraphState<DemoNodeData> {
   ])
 
   // `target` depends on `source`; optional edges are soft (ordering-only) dependencies.
+  // `label` is drawn on the line. While one end is hovered, the other end's card shows
+  // its relation: `relation` on the target ("target … source"),
+  // `inverseRelation` on the source ("source … target").
   const edges: GraphEdgeInput[] = [
-    { source: 'betaflight', target: 'auto-release', label: 'artifact' },
-    { source: 'absa-root', target: 'auto-release', label: 'parent POM' },
-    { source: 'auto-release', target: 'publish-npm', label: 'on tag' },
-    { source: 'auto-release', target: 'publish-docs', kind: 'optional' },
-    { source: 'publish-npm', target: 'notify' },
-    { source: 'publish-docs', target: 'notify', kind: 'optional' },
+    {
+      source: 'betaflight',
+      target: 'auto-release',
+      label: 'artifact',
+      relation: 'Builds from',
+      inverseRelation: 'Built into',
+    },
+    {
+      source: 'absa-root',
+      target: 'auto-release',
+      label: 'parent POM',
+      relation: 'Inherits from',
+      inverseRelation: 'Parent of',
+    },
+    {
+      source: 'auto-release',
+      target: 'publish-npm',
+      label: 'on tag',
+      relation: 'Runs on',
+      inverseRelation: 'Triggers',
+    },
+    {
+      source: 'auto-release',
+      target: 'publish-docs',
+      kind: 'optional',
+      relation: 'Runs on',
+      inverseRelation: 'Triggers',
+    },
+    { source: 'publish-npm', target: 'notify', relation: 'Reports on', inverseRelation: 'Notifies via' },
+    {
+      source: 'publish-docs',
+      target: 'notify',
+      kind: 'optional',
+      relation: 'Reports on',
+      inverseRelation: 'Notifies via',
+    },
   ]
 
   return createInitialState(nodes, edges, { x: 48, y: 64, zoom: 0.95 })

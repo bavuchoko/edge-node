@@ -11,6 +11,12 @@ export type DependencyHighlight = {
   focusId: NodeId
   nodes: Map<NodeId, DependencyRole>
   edges: Map<EdgeId, 'upstream' | 'downstream'>
+  /**
+   * Relation of each direct neighbor to the focus node, read as
+   * "neighbor <relation> focus": an outgoing edge's `relation` for its target,
+   * an incoming edge's `inverseRelation` for its source. Only set when present.
+   */
+  relations: Map<NodeId, string>
 }
 
 function collect(
@@ -74,7 +80,13 @@ export function getDependencyHighlight(
   nodes.set(focusId, 'focus')
 
   const edgeRoles = new Map<EdgeId, 'upstream' | 'downstream'>()
+  const relations = new Map<NodeId, string>()
   for (const edge of edges) {
+    if (edge.source === focusId && edge.relation) {
+      relations.set(edge.target, edge.relation)
+    } else if (edge.target === focusId && edge.inverseRelation) {
+      relations.set(edge.source, edge.inverseRelation)
+    }
     if (upstream.has(edge.source) && (edge.target === focusId || upstream.has(edge.target))) {
       edgeRoles.set(edge.id, 'upstream')
     } else if (
@@ -85,5 +97,5 @@ export function getDependencyHighlight(
     }
   }
 
-  return { focusId, nodes, edges: edgeRoles }
+  return { focusId, nodes, edges: edgeRoles, relations }
 }

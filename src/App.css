@@ -104,9 +104,9 @@
 .integration-card__role {
   padding: 1px 6px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .integration-card__role.is-upstream {

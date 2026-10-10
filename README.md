@@ -50,7 +50,16 @@ const initialState = createInitialState(
     { id: 'build', column: 0, row: 0, data: { title: 'Build', status: 'success' } },
     { id: 'deploy', column: 1, row: 0, data: { title: 'Deploy', status: 'idle' } },
   ]),
-  [{ source: 'build', target: 'deploy', kind: 'required', label: 'artifact' }],
+  [
+    {
+      source: 'build',
+      target: 'deploy',
+      kind: 'required',
+      label: 'artifact',
+      relation: 'runs on',
+      inverseRelation: 'triggers',
+    },
+  ],
 )
 
 export function App() {
@@ -156,6 +165,7 @@ const renderNode: RenderNode<ServiceData> = (node, ctx) => (
 | `editable` | 편집 모드 여부 |
 | `selected` | 선택됨 (편집 모드) |
 | `role` | 호버 중인 노드 기준 위치: `'focus'` / `'upstream'`(의존 대상) / `'downstream'`(의존하는 쪽) / `undefined` |
+| `relation` | 호버 중인 노드에 대한 이 노드의 관계 (직접 연결된 경우만). 이 노드가 target이면 `relation`, source면 `inverseRelation` |
 | `dimmed` | 강조 범위 밖이라 흐리게 표시되는 중 |
 | `expanded` / `toggleExpanded()` | 펼침 상태와 전환 함수 (보기 모드) |
 
@@ -174,7 +184,7 @@ const renderNode: RenderNode<ServiceData> = (node, ctx) => (
 | 콜백 | 호출 시점 |
 |------|-----------|
 | `onConnect(edge)` | 새 연결 직후 뜨는 편집 창(실선/점선, 라벨)이 닫힐 때(`Enter`, `Esc`, 다른 곳 클릭) 한 번. 닫히기 전에 삭제하면 호출되지 않음 |
-| `onEdgeUpdate(edge, previous)` | 기존 연결선을 클릭해 연 편집 창이 닫힐 때, `kind`·`label`이 실제로 바뀐 경우에만 한 번 |
+| `onEdgeUpdate(edge, previous)` | 기존 연결선을 클릭해 연 편집 창이 닫힐 때, `kind`·`label`·`relation`·`inverseRelation`이 실제로 바뀐 경우에만 한 번 |
 | `onEdgeDelete(edge)` | 확정된 연결선이 삭제될 때(`Delete` 키, 휴지통 버튼). 노드를 삭제하면 그 노드에 붙은 연결선마다 한 번씩 |
 | `onNodeMove(node, previous)` | 노드를 드래그해서 놓을 때 한 번(드래그 중에는 호출 안 됨). 실제로 움직였을 때만. `node.position`이 새 위치 |
 
@@ -193,7 +203,12 @@ const renderNode: RenderNode<ServiceData> = (node, ctx) => (
     const res = await fetch(`/api/edges/${encodeURIComponent(edge.id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind: edge.kind, label: edge.label }),
+      body: JSON.stringify({
+        kind: edge.kind,
+        label: edge.label,
+        relation: edge.relation,
+        inverseRelation: edge.inverseRelation,
+      }),
     })
     if (!res.ok) return false
   }}
@@ -207,7 +222,7 @@ const renderNode: RenderNode<ServiceData> = (node, ctx) => (
 - 변경은 화면에 먼저 반영됩니다. `false`를 반환하거나 Promise가 reject되면 되돌립니다
   (연결 → 제거, 수정 → 이전 값, 삭제 → 복원, 이동 → 원래 위치).
 - Promise가 끝날 때까지 해당 연결선은 반투명으로 표시됩니다.
-- `edge`는 `{ id, source, target, kind?, label? }`이고, target이 source에 의존한다는 뜻입니다.
+- `edge`는 `{ id, source, target, kind?, label?, relation?, inverseRelation? }`이고, target이 source에 의존한다는 뜻입니다.
   `id`는 `` `${source}->${target}` `` 형식입니다.
 
 ### 저장한 위치로 불러오기
@@ -301,30 +316,50 @@ type GraphTheme = {
 
 ## 그래프 데이터
 
+노드와 연결선은 따로 넘깁니다. 노드 데이터(`data`)에는 연결 정보가 없고,
+연결선 목록이 `createInitialState(nodes, edges)`의 두 번째 인자입니다.
+
 ```ts
-type GraphNode = {
+type GraphNode<TData = NodeData> = {
   id: string
   position: { x: number; y: number }
   width: number
   height: number
-  data: {
-    title: string
-    subtitle?: string
-    status: 'success' | 'error' | 'idle'
-    stats?: string
-    badge?: string
-  }
+  data: TData // 기본 카드는 NodeData: title, status, subtitle?, stats?, badge?, details?
 }
 
 type GraphEdge = {
-  id: string
-  source: string  // node id
-  target: string  // node id
+  id: string        // `${source}->${target}`
+  source: string    // 연결이 시작되는 노드 id (오른쪽 핸들)
+  target: string    // 연결이 끝나는 노드 id (왼쪽 핸들). target이 source에 의존
+  kind?: 'required' | 'optional' // 선 모양: 실선(기본) / 점선
+  label?: string    // 선 가운데에 표시되는 글자
+  relation?: string        // target의 관계. "target <relation> source" — source 호버 시 target에 표시
+  inverseRelation?: string // source의 관계. "source <inverseRelation> target" — target 호버 시 source에 표시
 }
 ```
 
-데모 그래프는 `createDemoGraph()`로 생성합니다.  
-초기 배치는 `layoutColumns()`로 열(column) 단위 자동 배치합니다.
+### 선 모양 · 라벨 · 관계
+
+예를 들어 a → b 연결을 실선, 라벨 `App`, b의 관계 `run On`, a의 관계 `hosts`로 만들면:
+
+```ts
+{ source: 'a', target: 'b', kind: 'required', label: 'App', relation: 'run On', inverseRelation: 'hosts' }
+```
+
+- 선 위에는 `App`이 표시됩니다.
+- **a에 마우스를 올리면 b 카드에 `run On`**, **b에 올리면 a 카드에 `hosts`** 칩이 뜹니다.
+  각 칩은 "그 카드의 노드가 호버한 노드에 대해 갖는 관계"입니다. 값이 없으면 칩도 뜨지 않습니다.
+- 편집 모드에서 직접 연결하면 편집 창이 떠서 선 모양(Required/Optional), Label, Relation을 입력할 수 있습니다.
+  Relation은 그래프처럼 좌우로 놓입니다: 왼쪽 칸은 a(source)의 관계(`inverseRelation`),
+  오른쪽 칸은 b(target)의 관계(`relation`)이고, 각 칸 위에 노드 이름이 표시됩니다.
+
+  ```
+  RELATION
+  a                 →   b
+  [ hosts      ]        [ run On     ]
+  ```
+  창이 닫힐 때 그 값이 담긴 `edge`로 `onConnect`가 호출됩니다. 이미 있는 선은 클릭해서 같은 창으로 고칩니다.
 
 ## 구조
 

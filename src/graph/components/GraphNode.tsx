@@ -10,6 +10,12 @@ export type NodeRenderContext = {
   selected: boolean
   /** Position on the hovered node's dependency chain, if one is being shown. */
   role?: DependencyRole
+  /**
+   * This node's relation to the hovered node, when they are directly connected:
+   * the edge's `relation` if this node is the target, `inverseRelation` if it is
+   * the source.
+   */
+  relation?: string
   /** Outside the chain currently highlighted (or an invalid target while connecting). */
   dimmed: boolean
   /** Details panel open (view mode). */
@@ -34,6 +40,8 @@ type GraphNodeProps<TData> = {
   editable: boolean
   /** Position relative to the hovered node's dependency chain. */
   role?: DependencyRole
+  /** This node's relation to the hovered node (direct neighbors only). */
+  relation?: string
   dimmed?: boolean
   onSelect: (id: string) => void
   onHoverChange: (id: string, hovered: boolean) => void
@@ -86,16 +94,16 @@ function DefaultCard({
   expandable: boolean
   detailsId: string
 }) {
-  const { role, expanded } = ctx
+  const { role, relation, expanded } = ctx
   return (
     <>
       <div className="graph-node__header">
         <div className="graph-node__header-row">
           <StatusIcon status={data.status ?? 'idle'} />
           <div className="graph-node__header-end">
-            {role === 'upstream' || role === 'downstream' ? (
-              <span className={`graph-node__role graph-node__role--${role}`}>
-                {role === 'upstream' ? 'Dependency' : 'Dependent'}
+            {relation && (role === 'upstream' || role === 'downstream') ? (
+              <span className={`graph-node__role graph-node__role--${role}`} title={relation}>
+                {relation}
               </span>
             ) : null}
             {expandable ? (
@@ -185,6 +193,7 @@ export function GraphNode<TData>({
   selected,
   editable,
   role,
+  relation,
   dimmed = false,
   onSelect,
   onHoverChange,
@@ -207,6 +216,7 @@ export function GraphNode<TData>({
     editable,
     selected,
     role,
+    relation,
     dimmed,
     expanded: !editable && expanded,
     toggleExpanded: () => onToggleExpanded(node.id),

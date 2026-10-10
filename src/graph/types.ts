@@ -47,7 +47,22 @@ export type GraphEdge = {
   kind?: EdgeKind
   /** Short text drawn at the middle of the edge. */
   label?: string
+  /**
+   * The target's relation to the source, read as "target <relation> source"
+   * (e.g. `'runs on'`). Shown on the target's card while the source is hovered.
+   */
+  relation?: string
+  /**
+   * The source's relation to the target, read as "source <inverseRelation> target"
+   * (e.g. `'hosts'`). Shown on the source's card while the target is hovered.
+   */
+  inverseRelation?: string
 }
+
+/** Edge fields the user can edit after drawing a connection. */
+export type EdgePatch = Partial<
+  Pick<GraphEdge, 'kind' | 'label' | 'relation' | 'inverseRelation'>
+>
 
 export type GraphEdgeInput = Omit<GraphEdge, 'id'>
 

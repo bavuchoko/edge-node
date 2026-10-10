@@ -21,10 +21,8 @@ export function IntegrationCard({ node, ctx }: IntegrationCardProps) {
           <h3>{title}</h3>
           <p>{integration.service} integration</p>
         </div>
-        {ctx.role === 'upstream' || ctx.role === 'downstream' ? (
-          <span className={`integration-card__role is-${ctx.role}`}>
-            {ctx.role === 'upstream' ? 'Dependency' : 'Dependent'}
-          </span>
+        {ctx.relation ? (
+          <span className={`integration-card__role is-${ctx.role}`}>{ctx.relation}</span>
         ) : null}
       </div>
 

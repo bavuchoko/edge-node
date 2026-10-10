@@ -209,13 +209,15 @@
 }
 
 .graph-node__role {
+  max-width: 160px;
+  overflow: hidden;
   padding: 1px 6px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
   line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .graph-node__role--upstream {
@@ -381,9 +383,9 @@
 .graph-edge-editor {
   position: absolute;
   z-index: 3;
-  display: flex;
-  align-items: center;
+  display: grid;
   gap: 6px;
+  width: 340px;
   padding: 6px;
   border: 1px solid var(--graph-node-border, #2e2e2e);
   border-radius: var(--graph-node-radius, 6px);
@@ -394,6 +396,13 @@
   transform: translateX(-50%);
   cursor: default;
   user-select: none;
+}
+
+.graph-edge-editor__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .graph-edge-editor__kinds {
@@ -426,8 +435,46 @@
   box-shadow: 0 0 0 1px var(--graph-node-border, #2e2e2e);
 }
 
-.graph-edge-editor__label {
-  width: 140px;
+.graph-edge-editor__field {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-edge-editor__field > span {
+  padding-left: 2px;
+  color: var(--graph-node-subtitle, #6b7280);
+  font-size: 11px;
+}
+
+.graph-edge-editor__relations {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  column-gap: 6px;
+  margin: 0;
+  padding: 6px 0 0;
+  border: 0;
+  border-top: 1px solid var(--graph-node-border, #2e2e2e);
+}
+
+.graph-edge-editor__relations > legend {
+  float: left;
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0 2px;
+  color: var(--graph-node-subtitle, #6b7280);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.graph-edge-editor__field input,
+.graph-edge-editor__relation input {
+  min-width: 0;
   padding: 5px 8px;
   border: 1px solid var(--graph-node-border, #2e2e2e);
   border-radius: 4px;
@@ -437,13 +484,36 @@
   user-select: text;
 }
 
-.graph-edge-editor__label::placeholder {
+.graph-edge-editor__field input::placeholder,
+.graph-edge-editor__relation input::placeholder {
   color: var(--graph-node-subtitle, #6b7280);
 }
 
-.graph-edge-editor__label:focus {
+.graph-edge-editor__field input:focus,
+.graph-edge-editor__relation input:focus {
   outline: none;
   border-color: var(--graph-node-border-selected, #60a5fa);
+}
+
+.graph-edge-editor__relation {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.graph-edge-editor__relation > span {
+  overflow: hidden;
+  padding-left: 2px;
+  color: var(--graph-node-title, #f9fafb);
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-edge-editor__arrow {
+  margin-bottom: 9px;
+  color: var(--graph-node-subtitle, #6b7280);
 }
 
 .graph-edge-editor__delete {

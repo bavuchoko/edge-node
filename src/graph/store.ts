@@ -1,6 +1,7 @@
 import { wouldCreateCycle } from './dependencies'
 import type {
   EdgeId,
+  EdgePatch,
   GraphEdge,
   GraphEdgeInput,
   GraphNode,
@@ -50,7 +51,7 @@ export type GraphAction =
   | { type: 'updateConnection'; pointer: Point }
   | { type: 'cancelConnection' }
   | { type: 'completeConnection'; targetId: NodeId; allowCycles?: boolean }
-  | { type: 'updateEdge'; id: EdgeId; patch: Partial<Pick<GraphEdge, 'kind' | 'label'>> }
+  | { type: 'updateEdge'; id: EdgeId; patch: EdgePatch }
   | { type: 'addEdge'; edge: GraphEdge }
   | { type: 'removeEdge'; id: EdgeId }
   | { type: 'deleteSelection' }
@@ -155,6 +156,8 @@ export function graphReducer<TData>(
       if (!edge) return state
       const next: GraphEdge = { ...edge, ...action.patch }
       if (!next.label) delete next.label
+      if (!next.relation) delete next.relation
+      if (!next.inverseRelation) delete next.inverseRelation
       return { ...state, edges: { ...state.edges, [action.id]: next } }
     }
 

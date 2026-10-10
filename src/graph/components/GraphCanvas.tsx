@@ -380,6 +380,7 @@ export function GraphCanvas<TData = NodeData>({
                 state.selection.id === node.id
               }
               role={highlight?.nodes.get(node.id)}
+              relation={highlight?.relations.get(node.id)}
               dimmed={
                 invalidTargets
                   ? invalidTargets.has(node.id)
@@ -410,6 +411,8 @@ export function GraphCanvas<TData = NodeData>({
         <EdgeEditor
           key={editingEdge.id}
           edge={editingEdge}
+          sourceName={nodeName(state.nodes[editingEdge.source])}
+          targetName={nodeName(state.nodes[editingEdge.target])}
           position={editorPosition}
           autoFocus={state.selection?.type === 'edge' && state.selection.created}
           onChange={(patch) => dispatch({ type: 'updateEdge', id: editingEdge.id, patch })}
@@ -435,6 +438,13 @@ export function GraphCanvas<TData = NodeData>({
       </div>
     </div>
   )
+}
+
+/** `data.title` when the node has one (built-in card data), else its id. */
+function nodeName(node: { id: NodeId; data: unknown } | undefined): string {
+  if (!node) return ''
+  const title = (node.data as { title?: unknown } | null)?.title
+  return typeof title === 'string' && title ? title : node.id
 }
 
 function countRole(nodes: Map<NodeId, DependencyRole>, role: DependencyRole): number {
