@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { GraphCanvas, useColorMode, type GraphEdge, type GraphNode } from './graph'
 import { createDemoGraph } from './demoGraph'
 import './graph/graph.css'
@@ -23,6 +23,7 @@ const graphApi = {
 function App() {
   const { resolvedMode, toggle } = useColorMode({ storageKey: 'edge-node:theme' })
   const nextMode = resolvedMode === 'dark' ? 'light' : 'dark'
+  const [editable, setEditable] = useState(true)
 
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedMode
@@ -33,18 +34,34 @@ function App() {
       <header className="app-header">
         <h1>edge-node</h1>
         <p>Node connection editor</p>
-        <button
-          type="button"
-          className="app-theme-toggle"
-          onClick={toggle}
-          aria-label={`Switch to ${nextMode} mode`}
-          title={`Switch to ${nextMode} mode`}
-        >
-          {resolvedMode === 'dark' ? '☀︎ Light' : '☾ Dark'}
-        </button>
+        <div className="app-header-actions">
+          <button
+            type="button"
+            className="app-header-button"
+            aria-pressed={editable}
+            title={editable ? 'Switch to view-only mode' : 'Switch to edit mode'}
+            onClick={() => setEditable((value) => !value)}
+          >
+            {editable ? '✎ Editing' : '◉ Viewing'}
+          </button>
+          <button
+            type="button"
+            className="app-header-button"
+            onClick={toggle}
+            aria-label={`Switch to ${nextMode} mode`}
+            title={`Switch to ${nextMode} mode`}
+          >
+            {resolvedMode === 'dark' ? '☀︎ Light' : '☾ Dark'}
+          </button>
+        </div>
       </header>
       <section className="app-canvas">
-        <GraphCanvas initialState={demo} colorMode={resolvedMode} {...graphApi} />
+        <GraphCanvas
+          initialState={demo}
+          colorMode={resolvedMode}
+          editable={editable}
+          {...graphApi}
+        />
       </section>
     </main>
   )

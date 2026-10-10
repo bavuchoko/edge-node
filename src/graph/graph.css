@@ -464,3 +464,14 @@
   background: color-mix(in srgb, var(--graph-status-error, #ef4444) 14%, transparent);
   color: var(--graph-status-error, #ef4444);
 }
+
+/* View-only mode: nothing is selectable; dragging anywhere pans. */
+.graph-canvas.is-readonly .graph-edges .graph-edge,
+.graph-canvas.is-readonly .graph-node__handle {
+  pointer-events: none;
+}
+
+.graph-canvas.is-readonly .graph-node,
+.graph-canvas.is-readonly .graph-node__handle {
+  cursor: inherit;
+}

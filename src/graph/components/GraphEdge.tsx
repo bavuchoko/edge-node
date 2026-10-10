@@ -8,6 +8,8 @@ type GraphEdgeProps = {
   kind?: EdgeKind
   label?: string
   selected: boolean
+  /** When false, the edge can't be selected (and so can't be edited or deleted). */
+  editable?: boolean
   /** Set when the edge lies on the hovered node's dependency chain. */
   role?: 'upstream' | 'downstream'
   dimmed?: boolean
@@ -26,6 +28,7 @@ export function GraphEdge({
   kind = 'required',
   label,
   selected,
+  editable = true,
   role,
   dimmed = false,
   pending = false,
@@ -54,10 +57,14 @@ export function GraphEdge({
     <g
       className={className}
       data-edge-id={id}
-      onPointerDown={(event) => {
-        event.stopPropagation()
-        onSelect(id)
-      }}
+      onPointerDown={
+        editable
+          ? (event) => {
+              event.stopPropagation()
+              onSelect(id)
+            }
+          : undefined
+      }
     >
       <path d={path} className="graph-edge__hit" strokeWidth={hitWidth} />
       <path d={path} className="graph-edge__path" />

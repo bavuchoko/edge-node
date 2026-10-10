@@ -5,6 +5,8 @@ import type { GraphNode as GraphNodeModel, NodeStatus } from '../types'
 type GraphNodeProps = {
   node: GraphNodeModel
   selected: boolean
+  /** When false, the node can't be selected, dragged or connected (hover still works). */
+  editable: boolean
   /** Position relative to the hovered node's dependency chain. */
   role?: DependencyRole
   dimmed?: boolean
@@ -62,6 +64,7 @@ function StatusIcon({ status }: { status: NodeStatus }) {
 export function GraphNode({
   node,
   selected,
+  editable,
   role,
   dimmed = false,
   onSelect,
@@ -112,6 +115,7 @@ export function GraphNode({
       onPointerEnter={() => onHoverChange(node.id, true)}
       onPointerLeave={() => onHoverChange(node.id, false)}
       onPointerDown={(event) => {
+        if (!editable) return
         if ((event.target as HTMLElement).closest('[data-handle]')) return
         event.stopPropagation()
         onSelect(node.id)
@@ -124,6 +128,8 @@ export function GraphNode({
         data-handle="target"
         data-node-id={node.id}
         aria-label={`Connect to ${data.title}`}
+        aria-hidden={!editable || undefined}
+        tabIndex={editable ? undefined : -1}
         onPointerDown={(event) => event.stopPropagation()}
       />
 
@@ -158,7 +164,11 @@ export function GraphNode({
         data-handle="source"
         data-node-id={node.id}
         aria-label={`Connect from ${data.title}`}
-        onPointerDown={(event) => onSourceHandleDown(node.id, event)}
+        aria-hidden={!editable || undefined}
+        tabIndex={editable ? undefined : -1}
+        onPointerDown={(event) => {
+          if (editable) onSourceHandleDown(node.id, event)
+        }}
       />
     </div>
   )

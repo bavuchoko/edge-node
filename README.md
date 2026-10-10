@@ -58,6 +58,19 @@ export function App() {
 }
 ```
 
+## 편집 모드 (`editable`)
+
+```tsx
+<GraphCanvas initialState={initialState} editable />
+```
+
+| `editable` | 동작 |
+|------------|------|
+| `true` | 노드 이동, 연결 추가·수정·삭제 가능 |
+| `false` (기본값) | 보기 전용. 팬·줌과 호버 시 의존관계 강조만 가능 (노드 위를 드래그해도 팬) |
+
+편집 중에 `false`로 바꾸면 열려 있던 연결선 편집 창이 닫히면서 그때까지의 변경이 확정됩니다.
+
 ## 변경 저장 (`onConnect` / `onEdgeUpdate` / `onEdgeDelete` / `onNodeMove`)
 
 연결선이 생기거나, 바뀌거나, 지워질 때, 그리고 노드를 옮겼을 때 호출됩니다. API로 관계와 배치를 저장할 때 씁니다.

@@ -24,6 +24,11 @@ import { GraphNode } from './GraphNode'
  */
 export type GraphCanvasProps = GraphPersistenceCallbacks & {
   initialState: GraphState
+  /**
+   * `true`: nodes can be moved and connections added, edited and deleted.
+   * `false` (default): view only — pan, zoom and hover highlighting still work.
+   */
+  editable?: boolean
   /** Overrides applied on top of the `colorMode` preset. */
   theme?: GraphTheme
   /** Base color preset. `'system'` follows `prefers-color-scheme`. Defaults to `'dark'`. */
@@ -37,6 +42,7 @@ export type GraphCanvasProps = GraphPersistenceCallbacks & {
 
 export function GraphCanvas({
   initialState,
+  editable = false,
   theme,
   colorMode = 'dark',
   allowCycles = false,
@@ -189,7 +195,7 @@ export function GraphCanvas({
       }
 
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        if (state.selection) {
+        if (editable && state.selection) {
           event.preventDefault()
           deleteSelection()
         }
@@ -197,7 +203,14 @@ export function GraphCanvas({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [state.selection, deleteSelection])
+  }, [editable, state.selection, deleteSelection])
+
+  // Leaving edit mode closes any open editor (committing it) and drops a half-drawn connection.
+  useEffect(() => {
+    if (editable) return
+    dispatch({ type: 'cancelConnection' })
+    dispatch({ type: 'setSelection', selection: null })
+  }, [editable])
 
   const draftSourcePoint = useMemo(() => {
     if (!state.connectionDraft) return null
@@ -257,10 +270,10 @@ export function GraphCanvas({
   const onCanvasPointerDown = (event: React.PointerEvent) => {
     if (event.button !== 0) return
     const t = event.target as HTMLElement
+    // In view-only mode nothing is interactive, so dragging anywhere pans.
     if (
-      t.closest('.graph-node') ||
-      t.closest('.graph-edge') ||
-      t.closest('[data-handle]')
+      editable &&
+      (t.closest('.graph-node') || t.closest('.graph-edge') || t.closest('[data-handle]'))
     ) {
       return
     }
@@ -271,7 +284,7 @@ export function GraphCanvas({
   return (
     <div
       ref={containerRef}
-      className={`graph-canvas${isPanning ? ' is-panning' : ''}${state.connectionDraft ? ' is-connecting' : ''}`}
+      className={`graph-canvas${editable ? '' : ' is-readonly'}${isPanning ? ' is-panning' : ''}${state.connectionDraft ? ' is-connecting' : ''}`}
       style={themeStyle}
       data-color-mode={resolvedColorMode}
       onPointerDown={onCanvasPointerDown}
@@ -289,6 +302,7 @@ export function GraphCanvas({
             const target = getHandlePosition(targetNode, 'left')
             return (
               <GraphEdge
+                editable={editable}
                 key={edge.id}
                 id={edge.id}
                 source={source}
@@ -326,6 +340,7 @@ export function GraphCanvas({
         <div className="graph-nodes">
           {nodes.map((node) => (
             <GraphNode
+              editable={editable}
               key={node.id}
               node={node}
               selected={
@@ -355,7 +370,7 @@ export function GraphCanvas({
         </div>
       </div>
 
-      {editingEdge && editorPosition ? (
+      {editable && editingEdge && editorPosition ? (
         <EdgeEditor
           key={editingEdge.id}
           edge={editingEdge}
@@ -377,8 +392,9 @@ export function GraphCanvas({
           </span>
         ) : null}
         <span>
-          Scroll to zoom · Drag empty space to pan · Drag right handle to
-          connect · Click a line to edit · Del to remove
+          {editable
+            ? 'Scroll to zoom · Drag empty space to pan · Drag right handle to connect · Click a line to edit · Del to remove'
+            : 'Scroll to zoom · Drag to pan · Hover a node to see its dependencies'}
         </span>
       </div>
     </div>

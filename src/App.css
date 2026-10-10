@@ -30,9 +30,14 @@
   color: var(--app-muted);
 }
 
-.app-theme-toggle {
+.app-header-actions {
+  display: flex;
+  gap: 8px;
   align-self: center;
   margin-left: auto;
+}
+
+.app-header-button {
   padding: 4px 10px;
   border: 1px solid var(--app-border);
   border-radius: 6px;
@@ -42,7 +47,7 @@
   cursor: pointer;
 }
 
-.app-theme-toggle:hover {
+.app-header-button:hover {
   background: var(--app-hover);
 }
 
