@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { getDependencyHighlight, getUpstream, type DependencyRole } from '../dependencies'
-import { getHandlePosition } from '../geometry'
+import { getBezierMidpoint, getHandlePosition } from '../geometry'
 import { useSystemColorMode, type ColorModePreference } from '../hooks/useColorMode'
 import { useConnectionDrag } from '../hooks/useConnectionDrag'
 import { useViewport } from '../hooks/useViewport'
@@ -12,6 +12,7 @@ import {
 } from '../theme'
 import type { GraphState, NodeId, Point } from '../types'
 import { ConnectionLine } from './ConnectionLine'
+import { EdgeEditor } from './EdgeEditor'
 import { GraphEdge } from './GraphEdge'
 import { GraphNode } from './GraphNode'
 
@@ -214,6 +215,23 @@ export function GraphCanvas({
 
   const { x, y, zoom } = state.viewport
 
+  const editingEdge =
+    state.selection?.type === 'edge' && !state.connectionDraft
+      ? state.edges[state.selection.id]
+      : undefined
+
+  /** Below the edge midpoint, in canvas-relative screen px. */
+  const editorPosition = useMemo((): Point | null => {
+    if (!editingEdge) return null
+    const sourceNode = state.nodes[editingEdge.source]
+    const targetNode = state.nodes[editingEdge.target]
+    if (!sourceNode || !targetNode) return null
+    const mid = getBezierMidpoint(
+      getHandlePosition(sourceNode, 'right'),
+      getHandlePosition(targetNode, 'left'),
+    )
+    return { x: x + mid.x * zoom, y: y + mid.y * zoom + 14 }
+  }, [editingEdge, state.nodes, x, y, zoom])
   const transform = `translate(${x}px, ${y}px) scale(${zoom})`
 
   const onCanvasPointerDown = (event: React.PointerEvent) => {
@@ -316,6 +334,18 @@ export function GraphCanvas({
         </div>
       </div>
 
+      {editingEdge && editorPosition ? (
+        <EdgeEditor
+          key={editingEdge.id}
+          edge={editingEdge}
+          position={editorPosition}
+          autoFocus={state.selection?.type === 'edge' && state.selection.created}
+          onChange={(patch) => dispatch({ type: 'updateEdge', id: editingEdge.id, patch })}
+          onDelete={() => dispatch({ type: 'deleteSelection' })}
+          onClose={() => dispatch({ type: 'setSelection', selection: null })}
+        />
+      ) : null}
+
       <div className="graph-hud" aria-hidden>
         {highlight ? (
           <span className="graph-hud__legend">
@@ -327,7 +357,7 @@ export function GraphCanvas({
         ) : null}
         <span>
           Scroll to zoom · Drag empty space to pan · Drag right handle to
-          connect · Del to remove
+          connect · Click a line to edit · Del to remove
         </span>
       </div>
     </div>

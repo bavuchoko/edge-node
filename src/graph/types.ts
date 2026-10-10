@@ -50,7 +50,8 @@ export type HandleSide = 'left' | 'right'
 
 export type Selection =
   | { type: 'node'; id: NodeId }
-  | { type: 'edge'; id: EdgeId }
+  /** `created` is set right after the edge was drawn, so its editor can grab focus. */
+  | { type: 'edge'; id: EdgeId; created?: boolean }
   | null
 
 export type ConnectionDraft = {

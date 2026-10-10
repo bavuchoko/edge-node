@@ -373,3 +373,90 @@
 .graph-hud__swatch--downstream {
   background: var(--graph-dep-downstream, #f59e0b);
 }
+
+.graph-edge-editor {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--graph-node-border, #2e2e2e);
+  border-radius: var(--graph-node-radius, 6px);
+  background: var(--graph-node-bg, #1e1e1e);
+  box-shadow: var(--graph-node-shadow, 0 8px 24px rgba(0, 0, 0, 0.35));
+  color: var(--graph-node-title, #f9fafb);
+  font-size: 12px;
+  transform: translateX(-50%);
+  cursor: default;
+  user-select: none;
+}
+
+.graph-edge-editor__kinds {
+  display: flex;
+  padding: 2px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--graph-node-title, #f9fafb) 6%, transparent);
+}
+
+.graph-edge-editor__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--graph-node-subtitle, #6b7280);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.graph-edge-editor__kind:hover {
+  color: var(--graph-node-title, #f9fafb);
+}
+
+.graph-edge-editor__kind.is-active {
+  background: var(--graph-node-bg, #1e1e1e);
+  color: var(--graph-node-title, #f9fafb);
+  box-shadow: 0 0 0 1px var(--graph-node-border, #2e2e2e);
+}
+
+.graph-edge-editor__label {
+  width: 140px;
+  padding: 5px 8px;
+  border: 1px solid var(--graph-node-border, #2e2e2e);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  user-select: text;
+}
+
+.graph-edge-editor__label::placeholder {
+  color: var(--graph-node-subtitle, #6b7280);
+}
+
+.graph-edge-editor__label:focus {
+  outline: none;
+  border-color: var(--graph-node-border-selected, #60a5fa);
+}
+
+.graph-edge-editor__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--graph-node-subtitle, #6b7280);
+  cursor: pointer;
+}
+
+.graph-edge-editor__delete:hover {
+  background: color-mix(in srgb, var(--graph-status-error, #ef4444) 14%, transparent);
+  color: var(--graph-status-error, #ef4444);
+}
