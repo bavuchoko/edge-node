@@ -465,13 +465,84 @@
   color: var(--graph-status-error, #ef4444);
 }
 
-/* View-only mode: nothing is selectable; dragging anywhere pans. */
+/* View-only mode: edges and handles ignore the pointer; nodes only expand. */
 .graph-canvas.is-readonly .graph-edges .graph-edge,
 .graph-canvas.is-readonly .graph-node__handle {
   pointer-events: none;
 }
 
-.graph-canvas.is-readonly .graph-node,
-.graph-canvas.is-readonly .graph-node__handle {
-  cursor: inherit;
+.graph-canvas.is-readonly .graph-node {
+  cursor: default;
+}
+
+.graph-canvas.is-readonly .graph-node.is-expandable {
+  cursor: pointer;
+}
+
+.graph-node.is-expanded {
+  z-index: 3;
+}
+
+.graph-node__header-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-node__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--graph-node-subtitle, #6b7280);
+  cursor: pointer;
+}
+
+.graph-node__toggle:hover {
+  background: color-mix(in srgb, var(--graph-node-title, #f9fafb) 8%, transparent);
+  color: var(--graph-node-title, #f9fafb);
+}
+
+.graph-node__toggle svg {
+  transition: transform 0.15s ease;
+}
+
+.graph-node.is-expanded .graph-node__toggle svg {
+  transform: rotate(180deg);
+}
+
+.graph-node__details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--graph-node-border, #2e2e2e);
+  color: var(--graph-node-title, #f9fafb);
+  font-size: 12px;
+  cursor: default;
+}
+
+.graph-node__detail-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.graph-node__detail-row {
+  display: grid;
+  grid-template-columns: minmax(80px, auto) 1fr;
+  gap: 12px;
+}
+
+.graph-node__detail-row dt {
+  color: var(--graph-node-subtitle, #6b7280);
+}
+
+.graph-node__detail-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
 }

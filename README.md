@@ -66,10 +66,53 @@ export function App() {
 
 | `editable` | 동작 |
 |------------|------|
-| `true` | 노드 이동, 연결 추가·수정·삭제 가능 |
-| `false` (기본값) | 보기 전용. 팬·줌과 호버 시 의존관계 강조만 가능 (노드 위를 드래그해도 팬) |
+| `true` | 편집 모드: 노드 이동, 연결 추가·수정·삭제 |
+| `false` (기본값) | 보기 모드: 노드 클릭으로 세부정보 펼치기/접기 |
 
-편집 중에 `false`로 바꾸면 열려 있던 연결선 편집 창이 닫히면서 그때까지의 변경이 확정됩니다.
+팬·줌과 호버 시 의존관계 강조는 두 모드 모두에서 동작합니다.
+
+- 편집 → 보기로 바꾸면 열려 있던 연결선 편집 창이 닫히면서 그때까지의 변경이 확정됩니다.
+- 보기 → 편집으로 바꾸면 펼쳐져 있던 세부정보가 접힙니다.
+
+## 노드 세부정보 (`details` / `renderNodeDetails`)
+
+보기 모드(`editable={false}`)에서 노드의 내용 영역을 클릭하거나 오른쪽 위 ⌄ 버튼을 누르면
+세부정보가 펼쳐지고, 다시 누르면 접힙니다. 편집 모드에서는 클릭이 선택·이동에 쓰이므로 펼쳐지지 않습니다.
+
+기본으로는 `data.details`를 라벨/값 목록으로 보여줍니다. `details`가 없는 노드는 펼칠 수 없습니다.
+
+```ts
+{
+  id: 'build',
+  data: {
+    title: 'Build',
+    status: 'success',
+    details: [
+      { label: 'Commit', value: 'a3f9c21' },
+      { label: 'Duration', value: '4m 12s' },
+    ],
+  },
+}
+```
+
+API에서 조회해야 하면 `renderNodeDetails`로 직접 그립니다. 펼쳐질 때만 렌더링되므로,
+반환한 컴포넌트가 마운트될 때 데이터를 불러오면 됩니다. 이 prop을 주면 모든 노드를 펼칠 수 있습니다.
+
+```tsx
+function NodeDetails({ id }: { id: string }) {
+  const [detail, setDetail] = useState<Record<string, string> | null>(null)
+  useEffect(() => {
+    fetch(`/api/nodes/${id}`).then((r) => r.json()).then(setDetail)
+  }, [id])
+  if (!detail) return <span>Loading…</span>
+  return <pre>{JSON.stringify(detail, null, 2)}</pre>
+}
+
+<GraphCanvas
+  initialState={initialState}
+  renderNodeDetails={(node) => <NodeDetails id={node.id} />}
+/>
+```
 
 ## 변경 저장 (`onConnect` / `onEdgeUpdate` / `onEdgeDelete` / `onNodeMove`)
 

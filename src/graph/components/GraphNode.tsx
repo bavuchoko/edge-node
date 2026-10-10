@@ -1,11 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import type { DependencyRole } from '../dependencies'
 import type { GraphNode as GraphNodeModel, NodeStatus } from '../types'
 
 type GraphNodeProps = {
   node: GraphNodeModel
   selected: boolean
-  /** When false, the node can't be selected, dragged or connected (hover still works). */
+  /**
+   * `true`: the node can be selected, dragged and connected.
+   * `false`: view mode — clicking expands/collapses its details instead.
+   */
   editable: boolean
   /** Position relative to the hovered node's dependency chain. */
   role?: DependencyRole
@@ -15,6 +18,27 @@ type GraphNodeProps = {
   onDragStart: (id: string, event: React.PointerEvent) => void
   onSourceHandleDown: (id: string, event: React.PointerEvent) => void
   onSizeChange: (id: string, size: { width: number; height: number }) => void
+  expanded: boolean
+  onToggleExpanded: (id: string) => void
+  /** Custom detail body; defaults to `data.details` as label/value rows. */
+  renderDetails?: (node: GraphNodeModel) => ReactNode
+}
+
+/** Pointer travel (screen px) beyond which a press counts as a drag, not a click. */
+const CLICK_SLOP = 4
+
+function DefaultDetails({ node }: { node: GraphNodeModel }) {
+  const details = node.data.details ?? []
+  return (
+    <dl className="graph-node__detail-list">
+      {details.map((row) => (
+        <div key={row.label} className="graph-node__detail-row">
+          <dt>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
 }
 
 function StatusIcon({ status }: { status: NodeStatus }) {
@@ -72,9 +96,15 @@ export function GraphNode({
   onDragStart,
   onSourceHandleDown,
   onSizeChange,
+  expanded,
+  onToggleExpanded,
+  renderDetails,
 }: GraphNodeProps) {
   const { data } = node
   const ref = useRef<HTMLDivElement>(null)
+  const pressStart = useRef<{ x: number; y: number } | null>(null)
+  const expandable = !editable && (Boolean(renderDetails) || (data.details?.length ?? 0) > 0)
+  const detailsId = `graph-node-details-${node.id}`
   const statusClass =
     data.status === 'success'
       ? 'is-success'
@@ -105,7 +135,9 @@ export function GraphNode({
       ref={ref}
       className={`graph-node ${statusClass}${selected ? ' is-selected' : ''}${
         role && role !== 'focus' ? ` is-${role}` : ''
-      }${dimmed ? ' is-dimmed' : ''}`}
+      }${dimmed ? ' is-dimmed' : ''}${expanded ? ' is-expanded' : ''}${
+        expandable ? ' is-expandable' : ''
+      }`}
       style={{
         left: node.position.x,
         top: node.position.y,
@@ -115,11 +147,22 @@ export function GraphNode({
       onPointerEnter={() => onHoverChange(node.id, true)}
       onPointerLeave={() => onHoverChange(node.id, false)}
       onPointerDown={(event) => {
-        if (!editable) return
         if ((event.target as HTMLElement).closest('[data-handle]')) return
+        // Keep the canvas from panning so a click here can open details.
         event.stopPropagation()
+        pressStart.current = { x: event.clientX, y: event.clientY }
+        if (!editable) return
         onSelect(node.id)
         onDragStart(node.id, event)
+      }}
+      onClick={(event) => {
+        const start = pressStart.current
+        pressStart.current = null
+        if (!expandable || !start) return
+        const target = event.target as HTMLElement
+        if (target.closest('[data-handle], .graph-node__details, .graph-node__toggle')) return
+        if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > CLICK_SLOP) return
+        onToggleExpanded(node.id)
       }}
     >
       <button
@@ -136,11 +179,34 @@ export function GraphNode({
       <div className="graph-node__header">
         <div className="graph-node__header-row">
           <StatusIcon status={data.status} />
-          {role === 'upstream' || role === 'downstream' ? (
-            <span className={`graph-node__role graph-node__role--${role}`}>
-              {role === 'upstream' ? 'Dependency' : 'Dependent'}
-            </span>
-          ) : null}
+          <div className="graph-node__header-end">
+            {role === 'upstream' || role === 'downstream' ? (
+              <span className={`graph-node__role graph-node__role--${role}`}>
+                {role === 'upstream' ? 'Dependency' : 'Dependent'}
+              </span>
+            ) : null}
+            {expandable ? (
+              <button
+                type="button"
+                className="graph-node__toggle"
+                aria-expanded={expanded}
+                aria-controls={detailsId}
+                aria-label={expanded ? `Hide ${data.title} details` : `Show ${data.title} details`}
+                onClick={() => onToggleExpanded(node.id)}
+              >
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
+                  <path
+                    d="M4 6l4 4 4-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            ) : null}
+          </div>
         </div>
         {data.stats ? (
           <p className="graph-node__stats">{data.stats}</p>
@@ -155,6 +221,12 @@ export function GraphNode({
       {data.badge ? (
         <div className="graph-node__footer">
           <span className="graph-node__badge">{data.badge}</span>
+        </div>
+      ) : null}
+
+      {expandable && expanded ? (
+        <div id={detailsId} className="graph-node__details">
+          {renderDetails ? renderDetails(node) : <DefaultDetails node={node} />}
         </div>
       ) : null}
 

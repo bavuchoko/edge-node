@@ -17,6 +17,12 @@ export function createDemoGraph(): GraphState {
         status: 'success',
         stats: '#12: 121 statements, 473 branches uncovered',
         badge: 'master',
+        details: [
+          { label: 'Build', value: '#12 · 4m 12s' },
+          { label: 'Commit', value: 'a3f9c21 — Fix serial port reconnect' },
+          { label: 'Triggered by', value: 'VCS push (master)' },
+          { label: 'Finished', value: '2026-10-10 14:32' },
+        ],
       },
     },
     {
@@ -29,6 +35,12 @@ export function createDemoGraph(): GraphState {
         status: 'success',
         stats: '#11070: 112 statements, 406 branches uncovered',
         badge: 'master',
+        details: [
+          { label: 'Build', value: '#11070 · 1m 48s' },
+          { label: 'Commit', value: '7d01be4 — Bump plugin versions' },
+          { label: 'Triggered by', value: 'Schedule (nightly)' },
+          { label: 'Finished', value: '2026-10-10 03:05' },
+        ],
       },
     },
     {
@@ -41,6 +53,12 @@ export function createDemoGraph(): GraphState {
         status: 'success',
         stats: '#48: 0 statements, 0 branches uncovered',
         badge: 'master',
+        details: [
+          { label: 'Build', value: '#48 · 52s' },
+          { label: 'Version', value: '2.4.0' },
+          { label: 'Triggered by', value: 'Snapshot dependency' },
+          { label: 'Finished', value: '2026-10-10 14:40' },
+        ],
       },
     },
     {
@@ -53,6 +71,12 @@ export function createDemoGraph(): GraphState {
         status: 'error',
         stats: '#9: 34 statements, 12 branches uncovered',
         badge: 'master',
+        details: [
+          { label: 'Build', value: '#9 · 38s' },
+          { label: 'Error', value: 'npm ERR! 403 — token lacks publish scope' },
+          { label: 'Triggered by', value: 'Auto Release #48' },
+          { label: 'Finished', value: '2026-10-10 14:41' },
+        ],
       },
     },
     {
@@ -65,6 +89,12 @@ export function createDemoGraph(): GraphState {
         status: 'success',
         stats: '#9: 8 statements, 2 branches uncovered',
         badge: 'master',
+        details: [
+          { label: 'Build', value: '#9 · 1m 05s' },
+          { label: 'Target', value: 'gh-pages' },
+          { label: 'Triggered by', value: 'Auto Release #48' },
+          { label: 'Finished', value: '2026-10-10 14:42' },
+        ],
       },
     },
     {

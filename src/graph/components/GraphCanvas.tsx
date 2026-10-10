@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { getDependencyHighlight, getUpstream, type DependencyRole } from '../dependencies'
 import { getBezierMidpoint, getHandlePosition } from '../geometry'
 import { useSystemColorMode, type ColorModePreference } from '../hooks/useColorMode'
@@ -11,7 +19,7 @@ import {
   themeToCssVars,
   type GraphTheme,
 } from '../theme'
-import type { GraphState, NodeId, Point } from '../types'
+import type { GraphNode as GraphNodeModel, GraphState, NodeId, Point } from '../types'
 import { ConnectionLine } from './ConnectionLine'
 import { EdgeEditor } from './EdgeEditor'
 import { GraphEdge } from './GraphEdge'
@@ -25,8 +33,9 @@ import { GraphNode } from './GraphNode'
 export type GraphCanvasProps = GraphPersistenceCallbacks & {
   initialState: GraphState
   /**
-   * `true`: nodes can be moved and connections added, edited and deleted.
-   * `false` (default): view only — pan, zoom and hover highlighting still work.
+   * `true`: edit mode — move nodes; add, edit and delete connections.
+   * `false` (default): view mode — click a node to expand/collapse its details.
+   * Pan, zoom and hover highlighting work in both.
    */
   editable?: boolean
   /** Overrides applied on top of the `colorMode` preset. */
@@ -38,6 +47,12 @@ export type GraphCanvasProps = GraphPersistenceCallbacks & {
    * Defaults to `false`: such connections are rejected.
    */
   allowCycles?: boolean
+  /**
+   * Body of a node's expanded panel (opened by clicking the node in view mode). Defaults to
+   * `node.data.details` as label/value rows. Rendered only while expanded, so a
+   * component returned here can fetch its data on mount.
+   */
+  renderNodeDetails?: (node: GraphNodeModel) => ReactNode
 }
 
 export function GraphCanvas({
@@ -50,6 +65,7 @@ export function GraphCanvas({
   onEdgeUpdate,
   onEdgeDelete,
   onNodeMove,
+  renderNodeDetails,
 }: GraphCanvasProps) {
   const [state, dispatch] = useReducer(graphReducer, initialState)
   const { savingEdgeIds, deleteSelection, reportNodeMove } = useGraphPersistence({
@@ -114,6 +130,15 @@ export function GraphCanvas({
   } | null>(null)
 
   const [hoveredNodeId, setHoveredNodeId] = useState<NodeId | null>(null)
+  const [expandedNodeIds, setExpandedNodeIds] = useState<ReadonlySet<NodeId>>(new Set())
+
+  const onToggleNodeExpanded = useCallback((id: NodeId) => {
+    setExpandedNodeIds((current) => {
+      const next = new Set(current)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+  }, [])
 
   const onNodeDragStart = useCallback((id: NodeId, event: React.PointerEvent) => {
     if (event.button !== 0) return
@@ -205,9 +230,13 @@ export function GraphCanvas({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [editable, state.selection, deleteSelection])
 
-  // Leaving edit mode closes any open editor (committing it) and drops a half-drawn connection.
+  // Switching modes resets the other mode's UI: leaving edit mode closes any open
+  // editor (committing it) and drops a half-drawn connection; entering it collapses details.
   useEffect(() => {
-    if (editable) return
+    if (editable) {
+      setExpandedNodeIds(new Set())
+      return
+    }
     dispatch({ type: 'cancelConnection' })
     dispatch({ type: 'setSelection', selection: null })
   }, [editable])
@@ -270,11 +299,7 @@ export function GraphCanvas({
   const onCanvasPointerDown = (event: React.PointerEvent) => {
     if (event.button !== 0) return
     const t = event.target as HTMLElement
-    // In view-only mode nothing is interactive, so dragging anywhere pans.
-    if (
-      editable &&
-      (t.closest('.graph-node') || t.closest('.graph-edge') || t.closest('[data-handle]'))
-    ) {
+    if (t.closest('.graph-node') || t.closest('.graph-edge') || t.closest('[data-handle]')) {
       return
     }
     dispatch({ type: 'setSelection', selection: null })
@@ -365,6 +390,9 @@ export function GraphCanvas({
               onDragStart={onNodeDragStart}
               onSourceHandleDown={connection.startFromHandle}
               onSizeChange={onNodeSizeChange}
+              expanded={expandedNodeIds.has(node.id)}
+              onToggleExpanded={onToggleNodeExpanded}
+              renderDetails={renderNodeDetails}
             />
           ))}
         </div>
@@ -394,7 +422,7 @@ export function GraphCanvas({
         <span>
           {editable
             ? 'Scroll to zoom · Drag empty space to pan · Drag right handle to connect · Click a line to edit · Del to remove'
-            : 'Scroll to zoom · Drag to pan · Hover a node to see its dependencies'}
+            : 'Scroll to zoom · Drag empty space to pan · Click a node for details · Hover a node to see its dependencies'}
         </span>
       </div>
     </div>

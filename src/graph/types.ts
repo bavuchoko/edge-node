@@ -5,12 +5,19 @@ export type Point = { x: number; y: number }
 
 export type NodeStatus = 'success' | 'error' | 'idle'
 
+export type NodeDetail = {
+  label: string
+  value: string | number
+}
+
 export type NodeData = {
   title: string
   subtitle?: string
   status: NodeStatus
   stats?: string
   badge?: string
+  /** Rows shown when the node is expanded (click its content area). */
+  details?: NodeDetail[]
 }
 
 export type GraphNode = {

@@ -36,6 +36,7 @@ export type {
   GraphNode,
   GraphState,
   NodeData,
+  NodeDetail,
   NodeId,
   NodeStatus,
   Point,
