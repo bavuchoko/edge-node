@@ -33,20 +33,20 @@ HTML 카드 노드와 SVG 연결선으로 왼쪽 → 오른쪽 파이프라인 �
 ## 설치
 
 ```bash
-npm install edge-node
+npm install @bavuchoko/edge-node
 ```
 
 React 18 이상이 필요합니다(`react`, `react-dom`은 peer dependency). 스타일 파일을 한 번 import 해야 카드 모양이 나옵니다.
 
 ```ts
-import 'edge-node/style.css'
+import '@bavuchoko/edge-node/style.css'
 ```
 
 ## 빠른 시작
 
 ```tsx
-import { createInitialState, GraphCanvas, layoutColumns } from 'edge-node'
-import 'edge-node/style.css'
+import { createInitialState, GraphCanvas, layoutColumns } from '@bavuchoko/edge-node'
+import '@bavuchoko/edge-node/style.css'
 
 const nodes = layoutColumns([
   { id: 'a', column: 0, row: 0, data: { title: 'Build', status: 'success' } },
@@ -272,7 +272,7 @@ const nodes = layoutColumns(inputs.map((input) => ({ ...input, position: positio
 ![커스텀 카드](docs/images/custom-card.png)
 
 ```tsx
-import { createInitialState, GraphCanvas, layoutColumns, type RenderNode } from 'edge-node'
+import { createInitialState, GraphCanvas, layoutColumns, type RenderNode } from '@bavuchoko/edge-node'
 
 type ServiceData = { name: string; owner: string; logs: string[] }
 

@@ -1,7 +1,27 @@
 {
-  "name": "edge-node",
-  "version": "0.0.0",
+  "name": "@bavuchoko/edge-node",
+  "version": "0.1.0",
   "description": "React node-graph editor with pannable canvas, draggable nodes and connectable edges.",
+  "keywords": [
+    "react",
+    "node-editor",
+    "graph",
+    "dag",
+    "pipeline",
+    "dependency-graph",
+    "diagram",
+    "edges"
+  ],
+  "license": "MIT",
+  "author": "bavuchoko",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bavuchoko/edge-node.git"
+  },
+  "homepage": "https://github.com/bavuchoko/edge-node#readme",
+  "bugs": {
+    "url": "https://github.com/bavuchoko/edge-node/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -43,5 +63,8 @@
     "react-dom": "^19.2.7",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
