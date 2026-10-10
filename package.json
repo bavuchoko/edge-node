@@ -1,17 +1,37 @@
 {
   "name": "edge-node",
-  "private": true,
   "version": "0.0.0",
+  "description": "React node-graph editor with pannable canvas, draggable nodes and connectable edges.",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:lib": "vite build --mode lib && tsc -p tsconfig.lib.json && node -e \"require('node:fs').copyFileSync('src/graph/graph.css','dist/style.css')\"",
+    "prepack": "npm run build:lib",
     "lint": "oxlint",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",
@@ -19,6 +39,8 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   }
