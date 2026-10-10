@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react'
 import type { GraphAction } from '../store'
-import type { EdgeId, GraphEdge, GraphNode, GraphState, NodeId, Point } from '../types'
+import type {
+  EdgeId,
+  GraphEdge,
+  GraphNode,
+  GraphState,
+  NodeData,
+  NodeId,
+  Point,
+} from '../types'
 
 /** Return `false` or reject to roll the change back. */
 export type GraphCallbackResult = void | boolean | Promise<void | boolean>
 
-export type GraphPersistenceCallbacks = {
+export type GraphPersistenceCallbacks<TData = NodeData> = {
   /**
    * A new connection was confirmed: called once when its editor closes
    * (Enter, Esc or clicking elsewhere) with the final `kind` and `label`.
@@ -26,11 +34,11 @@ export type GraphPersistenceCallbacks = {
    * A node was dragged to a new place: called once on drop (not while
    * dragging), only if it actually moved. `node.position` is the new spot.
    */
-  onNodeMove?: (node: GraphNode, previous: Point) => GraphCallbackResult
+  onNodeMove?: (node: GraphNode<TData>, previous: Point) => GraphCallbackResult
 }
 
-type UseGraphPersistenceArgs = GraphPersistenceCallbacks & {
-  state: GraphState
+type UseGraphPersistenceArgs<TData> = GraphPersistenceCallbacks<TData> & {
+  state: GraphState<TData>
   dispatch: Dispatch<GraphAction>
 }
 
@@ -45,14 +53,14 @@ function hasEdgeChanged(before: GraphEdge, after: GraphEdge): boolean {
  * Reports graph changes to the host (e.g. to save them through an API) and
  * rolls the local change back when the host rejects it.
  */
-export function useGraphPersistence({
+export function useGraphPersistence<TData>({
   state,
   dispatch,
   onConnect,
   onEdgeUpdate,
   onEdgeDelete,
   onNodeMove,
-}: UseGraphPersistenceArgs) {
+}: UseGraphPersistenceArgs<TData>) {
   const callbacks = useRef({ onConnect, onEdgeUpdate, onEdgeDelete, onNodeMove })
   callbacks.current = { onConnect, onEdgeUpdate, onEdgeDelete, onNodeMove }
   const stateRef = useRef(state)

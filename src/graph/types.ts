@@ -20,12 +20,16 @@ export type NodeData = {
   details?: NodeDetail[]
 }
 
-export type GraphNode = {
+/**
+ * `TData` is free-form when you draw cards yourself with `renderNode`; the
+ * built-in card reads the `NodeData` fields.
+ */
+export type GraphNode<TData = NodeData> = {
   id: NodeId
   position: Point
   width: number
   height: number
-  data: NodeData
+  data: TData
 }
 
 /**
@@ -66,8 +70,8 @@ export type ConnectionDraft = {
   pointer: Point
 }
 
-export type GraphState = {
-  nodes: Record<NodeId, GraphNode>
+export type GraphState<TData = NodeData> = {
+  nodes: Record<NodeId, GraphNode<TData>>
   edges: Record<EdgeId, GraphEdge>
   viewport: Viewport
   selection: Selection

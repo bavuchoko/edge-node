@@ -1,9 +1,9 @@
 import { DEFAULT_NODE_HEIGHT, DEFAULT_NODE_WIDTH } from './geometry'
-import type { GraphNode, NodeId, Point } from './types'
+import type { GraphNode, NodeData, NodeId, Point } from './types'
 
-export type LayoutNodeInput = {
+export type LayoutNodeInput<TData = NodeData> = {
   id: NodeId
-  data: GraphNode['data']
+  data: TData
   /** Column index (0 = leftmost). */
   column: number
   /** Order within column (top to bottom). */
@@ -19,8 +19,14 @@ const ROW_GAP = 48
 const ORIGIN_X = 0
 const ORIGIN_Y = 0
 
-/** Simple left-to-right column layout for demo graphs. */
-export function layoutColumns(inputs: LayoutNodeInput[]): GraphNode[] {
+/**
+ * Simple left-to-right column layout. Data matching `NodeData` is checked
+ * against it (so `status: 'success'` stays a literal); any other shape is
+ * inferred — pass `layoutColumns<MyData>(...)` to pin it down.
+ */
+export function layoutColumns(inputs: LayoutNodeInput<NodeData>[]): GraphNode<NodeData>[]
+export function layoutColumns<TData>(inputs: LayoutNodeInput<TData>[]): GraphNode<TData>[]
+export function layoutColumns<TData>(inputs: LayoutNodeInput<TData>[]): GraphNode<TData>[] {
   const widths = new Map<number, number>()
   for (const input of inputs) {
     const w = input.width ?? DEFAULT_NODE_WIDTH

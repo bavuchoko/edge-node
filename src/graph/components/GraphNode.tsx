@@ -1,9 +1,31 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { DependencyRole } from '../dependencies'
-import type { GraphNode as GraphNodeModel, NodeStatus } from '../types'
+import type { GraphNode as GraphNodeModel, NodeData, NodeStatus } from '../types'
 
-type GraphNodeProps = {
-  node: GraphNodeModel
+/** State handed to `renderNode` so a custom card can reflect it. */
+export type NodeRenderContext = {
+  /** Edit mode (`true`) or view mode (`false`). */
+  editable: boolean
+  /** Selected in edit mode. */
+  selected: boolean
+  /** Position on the hovered node's dependency chain, if one is being shown. */
+  role?: DependencyRole
+  /** Outside the chain currently highlighted (or an invalid target while connecting). */
+  dimmed: boolean
+  /** Details panel open (view mode). */
+  expanded: boolean
+  toggleExpanded: () => void
+}
+
+/**
+ * Draws the inside of a node card. Return `undefined` to use the built-in card
+ * for that node. Interactive elements you render (button, a, input, …) don't
+ * toggle the details panel when clicked.
+ */
+export type RenderNode<TData> = (node: GraphNodeModel<TData>, ctx: NodeRenderContext) => ReactNode
+
+type GraphNodeProps<TData> = {
+  node: GraphNodeModel<TData>
   selected: boolean
   /**
    * `true`: the node can be selected, dragged and connected.
@@ -20,24 +42,97 @@ type GraphNodeProps = {
   onSizeChange: (id: string, size: { width: number; height: number }) => void
   expanded: boolean
   onToggleExpanded: (id: string) => void
+  /** Custom card body; see `RenderNode`. */
+  renderNode?: RenderNode<TData>
   /** Custom detail body; defaults to `data.details` as label/value rows. */
-  renderDetails?: (node: GraphNodeModel) => ReactNode
+  renderDetails?: (node: GraphNodeModel<TData>) => ReactNode
 }
 
 /** Pointer travel (screen px) beyond which a press counts as a drag, not a click. */
 const CLICK_SLOP = 4
 
-function DefaultDetails({ node }: { node: GraphNodeModel }) {
-  const details = node.data.details ?? []
+/** Clicks on these never toggle the details panel. */
+const NO_TOGGLE_SELECTOR =
+  '[data-handle], .graph-node__details, button, a, input, select, textarea, label, [data-no-toggle]'
+
+/** The built-in card reads `NodeData`; with custom data any field may be missing. */
+function asNodeData(data: unknown): Partial<NodeData> {
+  return data && typeof data === 'object' ? (data as Partial<NodeData>) : {}
+}
+
+function DefaultDetails({ data }: { data: Partial<NodeData> }) {
   return (
     <dl className="graph-node__detail-list">
-      {details.map((row) => (
+      {(data.details ?? []).map((row) => (
         <div key={row.label} className="graph-node__detail-row">
           <dt>{row.label}</dt>
           <dd>{row.value}</dd>
         </div>
       ))}
     </dl>
+  )
+}
+
+function DefaultCard({
+  title,
+  data,
+  ctx,
+  expandable,
+  detailsId,
+}: {
+  title: string
+  data: Partial<NodeData>
+  ctx: NodeRenderContext
+  expandable: boolean
+  detailsId: string
+}) {
+  const { role, expanded } = ctx
+  return (
+    <>
+      <div className="graph-node__header">
+        <div className="graph-node__header-row">
+          <StatusIcon status={data.status ?? 'idle'} />
+          <div className="graph-node__header-end">
+            {role === 'upstream' || role === 'downstream' ? (
+              <span className={`graph-node__role graph-node__role--${role}`}>
+                {role === 'upstream' ? 'Dependency' : 'Dependent'}
+              </span>
+            ) : null}
+            {expandable ? (
+              <button
+                type="button"
+                className="graph-node__toggle"
+                aria-expanded={expanded}
+                aria-controls={detailsId}
+                aria-label={expanded ? `Hide ${title} details` : `Show ${title} details`}
+                onClick={ctx.toggleExpanded}
+              >
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
+                  <path
+                    d="M4 6l4 4 4-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            ) : null}
+          </div>
+        </div>
+        {data.stats ? <p className="graph-node__stats">{data.stats}</p> : null}
+      </div>
+
+      <h3 className="graph-node__title">{title}</h3>
+      {data.subtitle ? <p className="graph-node__subtitle">{data.subtitle}</p> : null}
+
+      {data.badge ? (
+        <div className="graph-node__footer">
+          <span className="graph-node__badge">{data.badge}</span>
+        </div>
+      ) : null}
+    </>
   )
 }
 
@@ -85,7 +180,7 @@ function StatusIcon({ status }: { status: NodeStatus }) {
   )
 }
 
-export function GraphNode({
+export function GraphNode<TData>({
   node,
   selected,
   editable,
@@ -98,19 +193,31 @@ export function GraphNode({
   onSizeChange,
   expanded,
   onToggleExpanded,
+  renderNode,
   renderDetails,
-}: GraphNodeProps) {
-  const { data } = node
+}: GraphNodeProps<TData>) {
+  const data = asNodeData(node.data)
+  const title = data.title ?? node.id
   const ref = useRef<HTMLDivElement>(null)
   const pressStart = useRef<{ x: number; y: number } | null>(null)
-  const expandable = !editable && (Boolean(renderDetails) || (data.details?.length ?? 0) > 0)
+  const hasDetails = Boolean(renderDetails) || (data.details?.length ?? 0) > 0
   const detailsId = `graph-node-details-${node.id}`
+
+  const ctx: NodeRenderContext = {
+    editable,
+    selected,
+    role,
+    dimmed,
+    expanded: !editable && expanded,
+    toggleExpanded: () => onToggleExpanded(node.id),
+  }
+  const customContent = renderNode?.(node, ctx)
+  const isCustom = customContent !== undefined
+  // A custom card decides what "expanded" shows, so it is always toggleable in view mode.
+  const expandable = !editable && (isCustom || hasDetails)
+
   const statusClass =
-    data.status === 'success'
-      ? 'is-success'
-      : data.status === 'error'
-        ? 'is-error'
-        : 'is-idle'
+    data.status === 'success' ? 'is-success' : data.status === 'error' ? 'is-error' : 'is-idle'
 
   useEffect(() => {
     const el = ref.current
@@ -133,11 +240,17 @@ export function GraphNode({
   return (
     <div
       ref={ref}
-      className={`graph-node ${statusClass}${selected ? ' is-selected' : ''}${
-        role && role !== 'focus' ? ` is-${role}` : ''
-      }${dimmed ? ' is-dimmed' : ''}${expanded ? ' is-expanded' : ''}${
-        expandable ? ' is-expandable' : ''
-      }`}
+      className={[
+        'graph-node',
+        isCustom ? 'graph-node--custom' : statusClass,
+        selected && 'is-selected',
+        role && role !== 'focus' && `is-${role}`,
+        dimmed && 'is-dimmed',
+        ctx.expanded && 'is-expanded',
+        expandable && 'is-expandable',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={{
         left: node.position.x,
         top: node.position.y,
@@ -159,8 +272,7 @@ export function GraphNode({
         const start = pressStart.current
         pressStart.current = null
         if (!expandable || !start) return
-        const target = event.target as HTMLElement
-        if (target.closest('[data-handle], .graph-node__details, .graph-node__toggle')) return
+        if ((event.target as HTMLElement).closest(NO_TOGGLE_SELECTOR)) return
         if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > CLICK_SLOP) return
         onToggleExpanded(node.id)
       }}
@@ -170,63 +282,27 @@ export function GraphNode({
         className="graph-node__handle graph-node__handle--target"
         data-handle="target"
         data-node-id={node.id}
-        aria-label={`Connect to ${data.title}`}
+        aria-label={`Connect to ${title}`}
         aria-hidden={!editable || undefined}
         tabIndex={editable ? undefined : -1}
         onPointerDown={(event) => event.stopPropagation()}
       />
 
-      <div className="graph-node__header">
-        <div className="graph-node__header-row">
-          <StatusIcon status={data.status} />
-          <div className="graph-node__header-end">
-            {role === 'upstream' || role === 'downstream' ? (
-              <span className={`graph-node__role graph-node__role--${role}`}>
-                {role === 'upstream' ? 'Dependency' : 'Dependent'}
-              </span>
-            ) : null}
-            {expandable ? (
-              <button
-                type="button"
-                className="graph-node__toggle"
-                aria-expanded={expanded}
-                aria-controls={detailsId}
-                aria-label={expanded ? `Hide ${data.title} details` : `Show ${data.title} details`}
-                onClick={() => onToggleExpanded(node.id)}
-              >
-                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
-                  <path
-                    d="M4 6l4 4 4-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            ) : null}
-          </div>
-        </div>
-        {data.stats ? (
-          <p className="graph-node__stats">{data.stats}</p>
-        ) : null}
-      </div>
+      {isCustom ? (
+        customContent
+      ) : (
+        <DefaultCard
+          title={title}
+          data={data}
+          ctx={ctx}
+          expandable={expandable}
+          detailsId={detailsId}
+        />
+      )}
 
-      <h3 className="graph-node__title">{data.title}</h3>
-      {data.subtitle ? (
-        <p className="graph-node__subtitle">{data.subtitle}</p>
-      ) : null}
-
-      {data.badge ? (
-        <div className="graph-node__footer">
-          <span className="graph-node__badge">{data.badge}</span>
-        </div>
-      ) : null}
-
-      {expandable && expanded ? (
+      {ctx.expanded && hasDetails ? (
         <div id={detailsId} className="graph-node__details">
-          {renderDetails ? renderDetails(node) : <DefaultDetails node={node} />}
+          {renderDetails ? renderDetails(node) : <DefaultDetails data={data} />}
         </div>
       ) : null}
 
@@ -235,7 +311,7 @@ export function GraphNode({
         className="graph-node__handle graph-node__handle--source"
         data-handle="source"
         data-node-id={node.id}
-        aria-label={`Connect from ${data.title}`}
+        aria-label={`Connect from ${title}`}
         aria-hidden={!editable || undefined}
         tabIndex={editable ? undefined : -1}
         onPointerDown={(event) => {

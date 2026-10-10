@@ -1,4 +1,5 @@
 export { GraphCanvas, type GraphCanvasProps } from './components/GraphCanvas'
+export type { NodeRenderContext, RenderNode } from './components/GraphNode'
 export {
   getDependencyHighlight,
   getDownstream,

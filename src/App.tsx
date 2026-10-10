@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
-import { GraphCanvas, useColorMode, type GraphEdge, type GraphNode } from './graph'
-import { createDemoGraph } from './demoGraph'
+import {
+  GraphCanvas,
+  useColorMode,
+  type GraphEdge,
+  type GraphNode,
+  type RenderNode,
+} from './graph'
+import { createDemoGraph, type DemoNodeData } from './demoGraph'
+import { IntegrationCard } from './IntegrationCard'
 import './graph/graph.css'
 import './App.css'
 
@@ -16,9 +23,13 @@ const graphApi = {
   onConnect: (edge: GraphEdge) => fakeRequest('POST /edges', edge),
   onEdgeUpdate: (edge: GraphEdge) => fakeRequest(`PATCH /edges/${edge.id}`, edge),
   onEdgeDelete: (edge: GraphEdge) => fakeRequest(`DELETE /edges/${edge.id}`, edge),
-  onNodeMove: (node: GraphNode) =>
+  onNodeMove: (node: GraphNode<DemoNodeData>) =>
     fakeRequest(`PATCH /nodes/${node.id}`, { position: node.position }),
 }
+
+/** Integration nodes get a custom card; everything else keeps the built-in one. */
+const renderNode: RenderNode<DemoNodeData> = (node, ctx) =>
+  node.data.integration ? <IntegrationCard node={node} ctx={ctx} /> : undefined
 
 function App() {
   const { resolvedMode, toggle } = useColorMode({ storageKey: 'edge-node:theme' })
@@ -60,6 +71,7 @@ function App() {
           initialState={demo}
           colorMode={resolvedMode}
           editable={editable}
+          renderNode={renderNode}
           {...graphApi}
         />
       </section>

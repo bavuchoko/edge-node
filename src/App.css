@@ -55,3 +55,108 @@
   flex: 1;
   min-height: 0;
 }
+
+/* Custom node card used for integration nodes (see IntegrationCard.tsx). */
+.integration-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 3px solid #4a154b;
+  border-radius: var(--graph-node-radius, 6px) var(--graph-node-radius, 6px) 0 0;
+}
+
+.integration-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.integration-card__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #4a154b;
+  color: #fff;
+  font-weight: 700;
+}
+
+.integration-card__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.integration-card__titles h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.integration-card__titles p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--graph-node-subtitle, #6b7280);
+}
+
+.integration-card__role {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.integration-card__role.is-upstream {
+  color: var(--graph-dep-upstream);
+  background: color-mix(in srgb, var(--graph-dep-upstream) 14%, transparent);
+}
+
+.integration-card__role.is-downstream {
+  color: var(--graph-dep-downstream);
+  background: color-mix(in srgb, var(--graph-dep-downstream) 14%, transparent);
+}
+
+.integration-card__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+.integration-card__stats div {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--graph-node-title, #f9fafb) 5%, transparent);
+}
+
+.integration-card__stats dt {
+  font-size: 11px;
+  color: var(--graph-node-subtitle, #6b7280);
+}
+
+.integration-card__stats dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.integration-card__message {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid #4a154b;
+  font-size: 12px;
+  color: var(--graph-node-subtitle, #6b7280);
+}
+
+.integration-card__toggle {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--graph-node-border-selected, #60a5fa);
+  font-size: 12px;
+  cursor: pointer;
+}

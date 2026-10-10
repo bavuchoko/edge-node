@@ -3,10 +3,21 @@ import {
   layoutColumns,
   type GraphEdgeInput,
   type GraphState,
+  type NodeData,
 } from './graph'
 
-export function createDemoGraph(): GraphState {
-  const nodes = layoutColumns([
+/** Built-in card fields, plus extra data only the custom integration card uses. */
+export type DemoNodeData = NodeData & {
+  integration?: {
+    service: string
+    channel: string
+    recipients: number
+    lastMessage: string
+  }
+}
+
+export function createDemoGraph(): GraphState<DemoNodeData> {
+  const nodes = layoutColumns<DemoNodeData>([
     {
       id: 'betaflight',
       column: 0,
@@ -103,10 +114,13 @@ export function createDemoGraph(): GraphState {
       row: 0,
       data: {
         title: 'Notify Slack',
-        subtitle: '… / Integrations',
         status: 'idle',
-        stats: 'Waiting for upstream',
-        badge: 'master',
+        integration: {
+          service: 'Slack',
+          channel: '#releases',
+          recipients: 42,
+          lastMessage: 'Auto Release 2.4.0 published to npm and docs.',
+        },
       },
     },
   ])

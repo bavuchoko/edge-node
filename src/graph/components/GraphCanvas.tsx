@@ -19,19 +19,19 @@ import {
   themeToCssVars,
   type GraphTheme,
 } from '../theme'
-import type { GraphNode as GraphNodeModel, GraphState, NodeId, Point } from '../types'
+import type { GraphNode as GraphNodeModel, GraphState, NodeData, NodeId, Point } from '../types'
 import { ConnectionLine } from './ConnectionLine'
 import { EdgeEditor } from './EdgeEditor'
 import { GraphEdge } from './GraphEdge'
-import { GraphNode } from './GraphNode'
+import { GraphNode, type RenderNode } from './GraphNode'
 
 /**
  * Change callbacks (`onConnect`, `onEdgeUpdate`, `onEdgeDelete`, `onNodeMove`)
  * apply the change locally first; return `false` or reject to roll it back.
  * While an edge callback's promise is pending the edge is drawn faded.
  */
-export type GraphCanvasProps = GraphPersistenceCallbacks & {
-  initialState: GraphState
+export type GraphCanvasProps<TData = NodeData> = GraphPersistenceCallbacks<TData> & {
+  initialState: GraphState<TData>
   /**
    * `true`: edit mode — move nodes; add, edit and delete connections.
    * `false` (default): view mode — click a node to expand/collapse its details.
@@ -52,10 +52,16 @@ export type GraphCanvasProps = GraphPersistenceCallbacks & {
    * `node.data.details` as label/value rows. Rendered only while expanded, so a
    * component returned here can fetch its data on mount.
    */
-  renderNodeDetails?: (node: GraphNodeModel) => ReactNode
+  renderNodeDetails?: (node: GraphNodeModel<TData>) => ReactNode
+  /**
+   * Draws the inside of every node card (the frame, connection handles,
+   * dragging and click-to-expand stay built in). Return `undefined` to use the
+   * built-in card for a node. Required in practice when `TData` isn't `NodeData`.
+   */
+  renderNode?: RenderNode<TData>
 }
 
-export function GraphCanvas({
+export function GraphCanvas<TData = NodeData>({
   initialState,
   editable = false,
   theme,
@@ -66,8 +72,9 @@ export function GraphCanvas({
   onEdgeDelete,
   onNodeMove,
   renderNodeDetails,
-}: GraphCanvasProps) {
-  const [state, dispatch] = useReducer(graphReducer, initialState)
+  renderNode,
+}: GraphCanvasProps<TData>) {
+  const [state, dispatch] = useReducer(graphReducer<TData>, initialState)
   const { savingEdgeIds, deleteSelection, reportNodeMove } = useGraphPersistence({
     state,
     dispatch,
@@ -393,6 +400,7 @@ export function GraphCanvas({
               expanded={expandedNodeIds.has(node.id)}
               onToggleExpanded={onToggleNodeExpanded}
               renderDetails={renderNodeDetails}
+              renderNode={renderNode}
             />
           ))}
         </div>

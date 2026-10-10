@@ -16,7 +16,7 @@ export function screenToWorld(
 }
 
 export function getHandlePosition(
-  node: GraphNode,
+  node: Pick<GraphNode<unknown>, 'position' | 'width' | 'height'>,
   side: 'left' | 'right',
 ): Point {
   const y = node.position.y + node.height / 2

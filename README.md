@@ -114,6 +114,59 @@ function NodeDetails({ id }: { id: string }) {
 />
 ```
 
+## 카드 직접 그리기 (`renderNode`)
+
+`renderNode`를 주면 카드 안쪽을 전부 직접 그릴 수 있습니다. 노드 데이터 모양도 자유롭게 정할 수 있습니다.
+라이브러리는 카드 테두리(위치, 배경, 선택·호버·흐림 상태), 연결 핸들, 드래그, 클릭으로 펼치기만 맡습니다.
+
+```tsx
+import {
+  GraphCanvas,
+  createInitialState,
+  layoutColumns,
+  type RenderNode,
+} from 'edge-node'
+
+type ServiceData = { name: string; owner: string; uptime: number; logs: string[] }
+
+const nodes = layoutColumns<ServiceData>([
+  { id: 'api', column: 0, row: 0, data: { name: 'API', owner: 'core', uptime: 99.9, logs: [] } },
+])
+const initialState = createInitialState(nodes, [])
+
+const renderNode: RenderNode<ServiceData> = (node, ctx) => (
+  <div style={{ padding: 16 }}>
+    <strong>{node.data.name}</strong>
+    <div>owner: {node.data.owner} · uptime {node.data.uptime}%</div>
+    {ctx.role ? <span>{ctx.role}</span> : null}
+    {ctx.expanded ? <ul>{node.data.logs.map((l) => <li key={l}>{l}</li>)}</ul> : null}
+    {!ctx.editable ? (
+      <button onClick={ctx.toggleExpanded}>{ctx.expanded ? '접기' : '로그 보기'}</button>
+    ) : null}
+  </div>
+)
+
+<GraphCanvas initialState={initialState} renderNode={renderNode} />
+```
+
+`ctx`(`NodeRenderContext`)로 넘어오는 값:
+
+| 값 | 의미 |
+|----|------|
+| `editable` | 편집 모드 여부 |
+| `selected` | 선택됨 (편집 모드) |
+| `role` | 호버 중인 노드 기준 위치: `'focus'` / `'upstream'`(의존 대상) / `'downstream'`(의존하는 쪽) / `undefined` |
+| `dimmed` | 강조 범위 밖이라 흐리게 표시되는 중 |
+| `expanded` / `toggleExpanded()` | 펼침 상태와 전환 함수 (보기 모드) |
+
+- 노드별로 다르게 그리려면 기본 카드를 쓸 노드에서 `undefined`를 반환하면 됩니다.
+- 커스텀 카드의 안쪽 여백은 0이라, 여백은 직접 줘야 합니다.
+- 보기 모드에서 카드 아무 곳이나 클릭하면 `expanded`가 바뀝니다. 카드 안의 `button`, `a`, `input` 같은 요소나
+  `data-no-toggle` 속성이 있는 요소를 클릭할 때는 바뀌지 않습니다.
+- `renderNodeDetails`나 `data.details`가 있으면, 펼쳤을 때 커스텀 카드 아래에 기본 세부정보 영역도 붙습니다.
+- `layoutColumns`에 넣는 데이터가 `NodeData` 모양이 아니면 `layoutColumns<MyData>(...)`처럼 타입을 지정하세요.
+  지정하지 않으면 `'success'` 같은 값이 `string`으로 넓어집니다.
+
 ## 변경 저장 (`onConnect` / `onEdgeUpdate` / `onEdgeDelete` / `onNodeMove`)
 
 연결선이 생기거나, 바뀌거나, 지워질 때, 그리고 노드를 옮겼을 때 호출됩니다. API로 관계와 배치를 저장할 때 씁니다.

@@ -5,6 +5,7 @@ import type {
   GraphEdgeInput,
   GraphNode,
   GraphState,
+  NodeData,
   NodeId,
   Point,
   Selection,
@@ -15,12 +16,12 @@ function createEdgeId(source: NodeId, target: NodeId): EdgeId {
   return `${source}->${target}`
 }
 
-export function createInitialState(
-  nodes: GraphNode[],
+export function createInitialState<TData = NodeData>(
+  nodes: GraphNode<TData>[],
   edges: GraphEdgeInput[],
   viewport: Viewport = { x: 40, y: 40, zoom: 1 },
-): GraphState {
-  const nodeMap: Record<NodeId, GraphNode> = {}
+): GraphState<TData> {
+  const nodeMap: Record<NodeId, GraphNode<TData>> = {}
   for (const node of nodes) {
     nodeMap[node.id] = node
   }
@@ -54,7 +55,10 @@ export type GraphAction =
   | { type: 'removeEdge'; id: EdgeId }
   | { type: 'deleteSelection' }
 
-export function graphReducer(state: GraphState, action: GraphAction): GraphState {
+export function graphReducer<TData>(
+  state: GraphState<TData>,
+  action: GraphAction,
+): GraphState<TData> {
   switch (action.type) {
     case 'setViewport':
       return { ...state, viewport: action.viewport }
@@ -202,10 +206,10 @@ export function graphReducer(state: GraphState, action: GraphAction): GraphState
   }
 }
 
-export function getNodes(state: GraphState): GraphNode[] {
+export function getNodes<TData>(state: GraphState<TData>): GraphNode<TData>[] {
   return Object.values(state.nodes)
 }
 
-export function getEdges(state: GraphState): GraphEdge[] {
+export function getEdges<TData>(state: GraphState<TData>): GraphEdge[] {
   return Object.values(state.edges)
 }
