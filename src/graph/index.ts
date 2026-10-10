@@ -1,10 +1,11 @@
 export { GraphCanvas, type GraphCanvasProps } from './components/GraphCanvas'
-export { createDemoGraph } from './demo'
 export {
   useColorMode,
   useSystemColorMode,
   type ColorModePreference,
 } from './hooks/useColorMode'
+export { layoutColumns, type LayoutNodeInput } from './layout'
+export { createInitialState } from './store'
 export {
   darkGraphTheme,
   defaultGraphTheme,
@@ -16,9 +17,13 @@ export {
   type ResolvedGraphTheme,
 } from './theme'
 export type {
+  EdgeId,
   GraphEdge,
   GraphNode,
   GraphState,
   NodeData,
+  NodeId,
+  NodeStatus,
+  Point,
   Viewport,
 } from './types'

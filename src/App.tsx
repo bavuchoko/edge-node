@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { createDemoGraph, GraphCanvas, useColorMode } from './graph'
+import { GraphCanvas, useColorMode } from './graph'
+import { createDemoGraph } from './demoGraph'
 import './graph/graph.css'
 import './App.css'
 

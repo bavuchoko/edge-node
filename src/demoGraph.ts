@@ -1,6 +1,9 @@
-import { layoutColumns } from './layout'
-import { createInitialState } from './store'
-import type { GraphState, NodeId } from './types'
+import {
+  createInitialState,
+  layoutColumns,
+  type GraphState,
+  type NodeId,
+} from './graph'
 
 export function createDemoGraph(): GraphState {
   const nodes = layoutColumns([
